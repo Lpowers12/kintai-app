@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>アルコールチェック＋勤怠管理</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #f4f6f9;
+    color: #1f2937;
+    font-size: 16px;
+  }
+
+  /* モード切替バー */
+  .mode-bar {
+    background: #0d2b4e;
+    color: #fff;
+    padding: 8px 12px;
+    display: flex;
+    gap: 4px;
+    font-size: 12px;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .mode-bar-label { opacity: 0.7; font-size: 11px; }
+  .mode-toggles { display: flex; gap: 4px; }
+  .mode-btn {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .mode-btn.active { background: #2563eb; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ヘッダー */
+  .app-header {
+    background: linear-gradient(135deg, #0d2b4e 0%, #1a5fa8 100%);
+    color: #fff;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+  .app-header .sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+  /* 社員入力画面 */
+  .emp-body {
+    padding: 20px 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .now-time {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .now-time-label { font-size: 11px; color: #6b7280; }
+  .now-time-value { font-size: 22px; font-weight: 700; color: #0d2b4e; margin-top: 2px; }
+
+  /* ステップ表示 */
+  .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    background: #e5e7eb;
+    color: #9ca3af;
+    transition: all 0.3s;
+  }
+  .step-circle.active { background: #2563eb; color: #fff; }
+  .step-circle.done { background: #10b981; color: #fff; }
+  .step-label { font-size: 10px; color: #9ca3af; }
+  .step-label.active { color: #2563eb; font-weight: 700; }
+  .step-label.done { color: #10b981; }
+  .step-line { width: 32px; height: 2px; background: #e5e7eb; margin-bottom: 16px; }
+  .step-line.done { background: #10b981; }
+
+  .emp-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0d2b4e;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .step-badge {
+    background: #2563eb;
+    color: #fff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+  }
+  .req { color: #dc2626; margin-left: 3px; }
+
+  .emp-input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 16px;
+    background: #fff;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .emp-input:focus { outline: none; border-color: #2563eb; }
+  .emp-input.value-input {
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    color: #0d2b4e;
+  }
+  .unit-hint { text-align: center; color: #6b7280; font-size: 12px; margin-top: 6px; }
+
+  /* アルコールチェックOK表示 */
+  .check-ok-banner {
+    background: #dcfce7;
+    border: 2px solid #16a34a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .check-ok-icon { font-size: 24px; }
+  .check-ok-text { font-size: 13px; font-weight: 700; color: #15803d; }
+  .check-ok-sub { font-size: 11px; color: #16a34a; }
+
+  /* ボタン */
+  .main-btn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s, opacity 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .main-btn:active { transform: scale(0.98); }
+  .main-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-blue { background: #2563eb; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+  .btn-green { background: #16a34a; color: #fff; box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
+  .btn-red { background: #dc2626; color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.25); }
+  .btn-gray { background: #6b7280; color: #fff; }
+
+  /* ロック説明 */
+  .lock-notice {
+    background: #fef3c7;
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #92400e;
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  /* 完了モーダル */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .modal-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    max-width: 360px;
+    width: 100%;
+    animation: pop 0.25s;
+  }
+  @keyframes pop {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .modal-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 36px;
+  }
+  .modal-icon.green { background: #dcfce7; }
+  .modal-icon.blue { background: #dbeafe; }
+  .modal-icon.red { background: #fee2e2; }
+  .modal-icon.orange { background: #fff7ed; }
+  .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #111827; }
+  .modal-detail {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 14px 0;
+    text-align: left;
+    font-size: 13px;
+  }
+  .modal-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; }
+  .modal-detail dt { color: #6b7280; font-size: 12px; }
+  .modal-detail dd { font-weight: 600; color: #111827; }
+  .modal-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    background: #2563eb;
+    color: #fff;
+  }
+
+  /* 管理者画面 */
+  .admin-body { padding: 16px; max-width: 1100px; margin: 0 auto; }
+
+  .date-filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .date-filter-row input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .btn-sm {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-sm.blue { background: #2563eb; color: #fff; }
+  .btn-sm.green { background: #16a34a; color: #fff; }
+  .btn-sm.gray { background: #e5e7eb; color: #374151; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  @media(min-width:600px){ .stats-grid { grid-template-columns: repeat(4,1fr); } }
+
+  .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .stat-label { font-size: 11px; color: #6b7280; }
+  .stat-num { font-size: 26px; font-weight: 700; margin-top: 4px; color: #0d2b4e; }
+  .stat-num.warn { color: #dc2626; }
+  .stat-num.ok { color: #16a34a; }
+
+  .admin-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0d2b4e;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* 社員ステータスカード */
+  .emp-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  @media(min-width:600px){ .emp-status-grid { grid-template-columns: repeat(3,1fr); } }
+
+  .emp-status-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .emp-status-card.status-none { border-color: #e5e7eb; }
+  .emp-status-card.status-checked { border-color: #fbbf24; background: #fffbeb; }
+  .emp-status-card.status-working { border-color: #16a34a; background: #f0fdf4; }
+  .emp-status-card.status-left { border-color: #6b7280; background: #f9fafb; }
+  .emp-status-card.status-alert { border-color: #dc2626; background: #fef2f2; }
+
+  .emp-status-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .emp-status-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-bottom: 4px;
+  }
+  .badge-none { background: #e5e7eb; color: #6b7280; }
+  .badge-checked { background: #fef3c7; color: #92400e; }
+  .badge-working { background: #dcfce7; color: #15803d; }
+  .badge-left { background: #e5e7eb; color: #374151; }
+  .badge-alert { background: #fee2e2; color: #dc2626; }
+  .emp-status-time { font-size: 11px; color: #6b7280; }
+
+  /* 記録テーブル */
+  .records-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .records-table th {
+    background: #f9fafb;
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  .records-table td {
+    padding: 10px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  .records-table tr:last-child td { border-bottom: none; }
+  .type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .type-alcohol { background: #dbeafe; color: #1d4ed8; }
+  .type-checkin { background: #dcfce7; color: #15803d; }
+  .type-checkout { background: #e5e7eb; color: #374151; }
+  .type-alert { background: #fee2e2; color: #dc2626; }
+
+  /* 名簿 */
+  .roster-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .roster-chip {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .roster-chip button {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+  }
+  .add-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .add-row input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  .add-row input:focus { border-color: #2563eb; }
+  .empty-state { text-align: center; padding: 24px; color: #9ca3af; font-size: 13px; }
+
+  /* GPS */
+  .gps-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f9ff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #0369a1;
+    margin-bottom: 12px;
+  }
+  .gps-status.error { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+  .gps-status.ok { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  .gps-dot { width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; flex-shrink: 0; }
+  .gps-dot.ok { background: #22c55e; animation: pulse 1.5s infinite; }
+  .gps-dot.error { background: #f97316; }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+  .map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #2563eb;
+    font-size: 11px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* トースト */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- モード切替 -->
+<div class="mode-bar">
+  <span class="mode-bar-label">📱 表示切替</span>
+  <div class="mode-toggles">
+    <button class="mode-btn active" onclick="switchView('empView', this)">社員用</button>
+    <button class="mode-btn" onclick="switchView('adminView', this)">管理者用</button>
+  </div>
+</div>
+
+<!-- ===== 社員用画面 ===== -->
+<div id="empView" class="view active">
+  <div class="app-header">
+    <h1>🚗 アルコールチェック＋勤怠</h1>
+    <div class="sub" id="todayLabel"></div>
+  </div>
+  <div class="emp-body">
+
+    <!-- 時刻表示 -->
+    <div class="now-time">
+      <div class="now-time-label">現在時刻</div>
+      <div class="now-time-value" id="nowTime">--:--:--</div>
+    </div>
+
+    <!-- ステップ表示 -->
+    <div class="steps">
+      <div class="step">
+        <div class="step-circle" id="stepCircle1">1</div>
+        <div class="step-label" id="stepLabel1">名前</div>
+      </div>
+      <div class="step-line" id="stepLine1"></div>
+      <div class="step">
+        <div class="step-circle" id="stepCircle2">2</div>
+        <div class="step-label" id="stepLabel2">チェック</div>
+      </div>
+      <div class="step-line" id="stepLine2"></div>
+      <div class="step">
+        <div class="step-circle" id="stepCircle3">3</div>
+        <div class="step-label" id="stepLabel3">出勤</div>
+      </div>
+      <div class="step-line" id="stepLine3"></div>
+      <div class="step">
+        <div class="step-circle" id="stepCircle4">4</div>
+        <div class="step-label" id="stepLabel4">退勤</div>
+      </div>
+    </div>
+
+    <!-- STEP1: 名前選択 -->
+    <div class="emp-card" id="cardName">
+      <div class="card-title">
+        <div class="step-badge">1</div>
+        お名前を選択してください
+      </div>
+      <div class="field">
+        <select class="emp-input" id="empName">
+          <option value="">▼ 名前を選んでください</option>
+        </select>
+        <datalist id="empNameList"></datalist>
+      </div>
+      <button class="main-btn btn-blue" id="btnSelectName" onclick="selectName()">
+        次へ →
+      </button>
+    </div>
+
+    <!-- STEP2: アルコールチェック（名前選択後に表示） -->
+    <div class="emp-card" id="cardAlcohol" style="display:none;">
+      <div class="card-title">
+        <div class="step-badge">2</div>
+        アルコール測定値を入力
+      </div>
+      <div class="field">
+        <label>測定値<span class="req">*</span></label>
+        <input type="number" class="emp-input value-input" id="empValue"
+               placeholder="0.00" min="0" max="2" step="0.01">
+        <div class="unit-hint">mg/L（アルコールなしの場合は 0.00）</div>
+      </div>
+      <button class="main-btn btn-blue" onclick="submitAlcohol()">
+        ✅ チェック結果を送信
+      </button>
+    </div>
+
+    <!-- STEP3: 出勤打刻（チェック完了後に表示） -->
+    <div class="emp-card" id="cardCheckin" style="display:none;">
+      <div class="card-title">
+        <div class="step-badge" style="background:#16a34a;">3</div>
+        出勤打刻
+      </div>
+      <div class="check-ok-banner">
+        <div class="check-ok-icon">✅</div>
+        <div>
+          <div class="check-ok-text">アルコールチェック完了</div>
+          <div class="check-ok-sub" id="checkOkDetail"></div>
+        </div>
+      </div>
+      <div class="gps-status" id="gpsStatusCheckin">
+        <div class="gps-dot" id="gpsDotCheckin"></div>
+        <span id="gpsTextCheckin">📍 位置情報を取得中...</span>
+      </div>
+      <button class="main-btn btn-green" id="btnCheckin" onclick="submitCheckin()">
+        🟢 出勤する
+      </button>
+    </div>
+
+    <!-- STEP4: 退勤打刻 -->
+    <div class="emp-card" id="cardCheckout" style="display:none;">
+      <div class="card-title">
+        <div class="step-badge" style="background:#6b7280;">4</div>
+        退勤打刻
+      </div>
+      <div class="check-ok-banner" style="border-color:#16a34a; background:#f0fdf4;">
+        <div class="check-ok-icon">🟢</div>
+        <div>
+          <div class="check-ok-text" style="color:#15803d;">出勤中</div>
+          <div class="check-ok-sub" id="checkinTimeLabel" style="color:#16a34a;"></div>
+        </div>
+      </div>
+      <div class="gps-status" id="gpsStatusCheckout">
+        <div class="gps-dot" id="gpsDotCheckout"></div>
+        <span id="gpsTextCheckout">📍 位置情報を取得中...</span>
+      </div>
+      <button class="main-btn btn-gray" onclick="submitCheckout()">
+        🔴 退勤する
+      </button>
+    </div>
+
+    <!-- アルコール検出時の警告 -->
+    <div class="emp-card" id="cardAlert" style="display:none;">
+      <div class="card-title" style="color:#dc2626;">
+        ⚠️ アルコール検出
+      </div>
+      <div class="lock-notice">
+        <span>🔒</span>
+        アルコールが検出されたため出勤できません。管理者に連絡してください。
+      </div>
+      <button class="main-btn btn-gray" onclick="resetEmpForm()">← 最初に戻る</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 管理者用画面 ===== -->
+<div id="adminView" class="view">
+  <div class="app-header">
+    <h1>📊 勤怠管理ダッシュボード</h1>
+    <div class="sub" id="adminDateLabel"></div>
+  </div>
+  <div class="admin-body">
+
+    <div class="date-filter-row">
+      <input type="date" id="filterDate">
+      <button class="btn-sm blue" onclick="setTodayFilter()">今日</button>
+      <button class="btn-sm green" onclick="exportCSV()">📥 CSV出力</button>
+    </div>
+
+    <!-- サマリー -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- 社員別ステータス -->
+    <div class="admin-section">
+      <div class="section-title">👥 本日の社員ステータス</div>
+      <div class="emp-status-grid" id="empStatusGrid"></div>
+    </div>
+
+    <!-- 記録一覧 -->
+    <div class="admin-section">
+      <div class="section-title">
+        📋 記録一覧
+        <button class="btn-sm gray" onclick="renderAdmin()">🔄 更新</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="records-table">
+          <thead>
+            <tr>
+              <th>氏名</th>
+              <th>種別</th>
+              <th>時刻</th>
+              <th>詳細</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 社員名簿 -->
+    <div class="admin-section">
+      <div class="section-title">📝 社員名簿</div>
+      <div class="add-row">
+        <input type="text" id="newRoster" placeholder="社員名を入力">
+        <button class="btn-sm blue" onclick="addRoster()">追加</button>
+      </div>
+      <div class="roster-chips" id="rosterChips"></div>
+    </div>
+
+    <!-- 危険ゾーン -->
+    <div class="admin-section">
+      <div class="section-title" style="color:#dc2626;">⚠️ データ管理</div>
+      <button class="btn-sm gray" onclick="clearAll()" style="width:100%; padding:12px; font-size:13px;">全データを削除する</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- 完了モーダル -->
+<div class="overlay" id="overlay">
+  <div class="modal-card">
+    <div class="modal-icon" id="modalIcon"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-detail" id="modalDetail"></div>
+    <button class="modal-btn" id="modalBtn" onclick="closeModal()">OK</button>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== ストレージ =====
+const S = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+};
+let roster = S.get('kintai_roster') || [];
+let records = S.get('kintai_records') || [];
+function saveAll() { S.set('kintai_roster', roster); S.set('kintai_records', records); }
+
+// ===== セッション状態（当日のみ） =====
+let session = { name: '', alcoholDone: false, alcoholValue: null, checkinId: null };
+
+// ===== GPS =====
+let currentGPS = null; // { lat, lng, accuracy }
+
+function getGPS(dotId, textId, statusId) {
+  const dot = document.getElementById(dotId);
+  const text = document.getElementById(textId);
+  const box = document.getElementById(statusId);
+  currentGPS = null;
+  if (!navigator.geolocation) {
+    dot.className = 'gps-dot error';
+    text.textContent = '📍 位置情報は非対応のブラウザです';
+    box.className = 'gps-status error';
+    return;
+  }
+  dot.className = 'gps-dot';
+  text.textContent = '📍 位置情報を取得中...';
+  box.className = 'gps-status';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      currentGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) };
+      dot.className = 'gps-dot ok';
+      text.innerHTML = `📍 取得完了（精度 ±${currentGPS.accuracy}m） <a class="map-link" href="https://maps.google.com/?q=${currentGPS.lat},${currentGPS.lng}" target="_blank">地図で確認 →</a>`;
+      box.className = 'gps-status ok';
+    },
+    err => {
+      dot.className = 'gps-dot error';
+      text.textContent = err.code === 1 ? '⚠️ 位置情報の許可が必要です（設定から許可してください）' : '⚠️ 位置情報を取得できませんでした';
+      box.className = 'gps-status error';
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+function mapsUrl(lat, lng) {
+  return `https://maps.google.com/?q=${lat},${lng}`;
+}
+
+// ===== ユーティリティ =====
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+}
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('ja-JP', { month:'2-digit', day:'2-digit' }) + ' ' +
+         d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+}
+function escape(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ===== 時刻更新 =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('nowTime').textContent =
+    now.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  document.getElementById('todayLabel').textContent =
+    now.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== ビュー切替 =====
+function switchView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'adminView') {
+    document.getElementById('adminDateLabel').textContent =
+      new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+    document.getElementById('filterDate').value = todayKey();
+    renderAdmin();
+  }
+}
+
+// ===== 名前選択肢を更新 =====
+function refreshSelect() {
+  const sel = document.getElementById('empName');
+  sel.innerHTML = '<option value="">▼ 名前を選んでください</option>';
+  roster.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    sel.appendChild(o);
+  });
+}
+
+// ===== ステップ表示更新 =====
+function updateSteps(step) {
+  for (let i = 1; i <= 4; i++) {
+    const c = document.getElementById('stepCircle' + i);
+    const l = document.getElementById('stepLabel' + i);
+    c.className = 'step-circle';
+    l.className = 'step-label';
+    if (i < step) { c.classList.add('done'); c.textContent = '✓'; l.classList.add('done'); }
+    else if (i === step) { c.classList.add('active'); l.classList.add('active'); }
+    else { c.textContent = i; }
+  }
+  for (let i = 1; i <= 3; i++) {
+    const line = document.getElementById('stepLine' + i);
+    line.className = 'step-line' + (i < step ? ' done' : '');
+  }
+}
+
+// ===== 社員フォームリセット =====
+function resetEmpForm() {
+  session = { name: '', alcoholDone: false, alcoholValue: null, checkinId: null };
+  ['cardName','cardAlcohol','cardCheckin','cardCheckout','cardAlert'].forEach(id => {
+    document.getElementById(id).style.display = id === 'cardName' ? 'block' : 'none';
+  });
+  document.getElementById('empName').value = '';
+  document.getElementById('empValue').value = '';
+  updateSteps(1);
+}
+
+// ===== STEP1: 名前選択 =====
+function selectName() {
+  const name = document.getElementById('empName').value;
+  if (!name) { toast('名前を選択してください'); return; }
+  session.name = name;
+
+  // 本日の出勤・退勤状態を確認
+  const today = todayKey();
+  const myRecords = records.filter(r => r.name === name && r.date === today);
+  const checkin = myRecords.find(r => r.type === 'checkin');
+  const checkout = myRecords.find(r => r.type === 'checkout');
+
+  if (checkout) {
+    // 退勤済み
+    showModal('blue', '📋', '本日の記録', `
+      <dl>
+        <dt>氏名</dt><dd>${escape(name)}</dd>
+        <dt>出勤</dt><dd>${checkin ? fmtTime(checkin.time) : '-'}</dd>
+        <dt>退勤</dt><dd>${fmtTime(checkout.time)}</dd>
+      </dl>
+    `);
+    return;
+  }
+
+  if (checkin) {
+    // 出勤済み → 退勤へ
+    session.checkinId = checkin.id;
+    document.getElementById('cardName').style.display = 'none';
+    document.getElementById('cardCheckout').style.display = 'block';
+    document.getElementById('checkinTimeLabel').textContent = '出勤時刻：' + fmtTime(checkin.time);
+    updateSteps(4);
+    return;
+  }
+
+  // アルコールチェック済みか確認
+  const alcoholRecord = myRecords.find(r => r.type === 'alcohol');
+  if (alcoholRecord && alcoholRecord.value === 0) {
+    session.alcoholDone = true;
+    session.alcoholValue = 0;
+    document.getElementById('cardName').style.display = 'none';
+    document.getElementById('cardCheckin').style.display = 'block';
+    document.getElementById('checkOkDetail').textContent =
+      '測定値：0.00 mg/L（' + fmtTime(alcoholRecord.time) + '）';
+    getGPS('gpsDotCheckin', 'gpsTextCheckin', 'gpsStatusCheckin');
+    updateSteps(3);
+    return;
+  }
+
+  // アルコールチェックへ
+  document.getElementById('cardName').style.display = 'none';
+  document.getElementById('cardAlcohol').style.display = 'block';
+  updateSteps(2);
+}
+
+// ===== STEP2: アルコールチェック =====
+function submitAlcohol() {
+  const raw = document.getElementById('empValue').value;
+  if (raw === '' || isNaN(parseFloat(raw))) { toast('測定値を入力してください'); return; }
+  const val = parseFloat(raw);
+  if (val < 0 || val > 2) { toast('測定値が不正です（0.00 〜 2.00）'); return; }
+
+  const now = new Date();
+  const record = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    name: session.name,
+    date: todayKey(),
+    time: now.toISOString(),
+    type: 'alcohol',
+    value: val
+  };
+  records.push(record);
+  saveAll();
+  session.alcoholValue = val;
+  session.alcoholDone = true;
+
+  document.getElementById('cardAlcohol').style.display = 'none';
+
+  if (val > 0) {
+    // アルコール検出
+    document.getElementById('cardAlert').style.display = 'block';
+    updateSteps(2);
+    showModal('red', '⚠️', 'アルコール検出', `
+      <dl>
+        <dt>氏名</dt><dd>${escape(session.name)}</dd>
+        <dt>測定値</dt><dd style="color:#dc2626;">${val.toFixed(2)} mg/L</dd>
+        <dt>時刻</dt><dd>${fmtTime(now.toISOString())}</dd>
+      </dl>
+      <p style="color:#dc2626; font-size:12px; margin-top:8px;">管理者に報告してください。</p>
+    `);
+  } else {
+    // 正常 → 出勤へ
+    document.getElementById('cardCheckin').style.display = 'block';
+    document.getElementById('checkOkDetail').textContent =
+      '測定値：0.00 mg/L（' + fmtTime(now.toISOString()) + '）';
+    getGPS('gpsDotCheckin', 'gpsTextCheckin', 'gpsStatusCheckin');
+    updateSteps(3);
+  }
+}
+
+// ===== STEP3: 出勤打刻 =====
+function submitCheckin() {
+  const now = new Date();
+  const gps = currentGPS;
+  const record = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    name: session.name,
+    date: todayKey(),
+    time: now.toISOString(),
+    type: 'checkin',
+    gps: gps ? { lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy } : null
+  };
+  records.push(record);
+  saveAll();
+  session.checkinId = record.id;
+
+  document.getElementById('cardCheckin').style.display = 'none';
+  document.getElementById('cardCheckout').style.display = 'block';
+  document.getElementById('checkinTimeLabel').textContent = '出勤時刻：' + fmtTime(now.toISOString());
+  getGPS('gpsDotCheckout', 'gpsTextCheckout', 'gpsStatusCheckout');
+  updateSteps(4);
+
+  const gpsRow = gps
+    ? `<dt>出勤場所</dt><dd><a class="map-link" href="${mapsUrl(gps.lat, gps.lng)}" target="_blank">地図で確認 →</a></dd>`
+    : `<dt>出勤場所</dt><dd style="color:#9ca3af;">取得できませんでした</dd>`;
+
+  showModal('green', '🟢', '出勤しました！', `
+    <dl>
+      <dt>氏名</dt><dd>${escape(session.name)}</dd>
+      <dt>出勤時刻</dt><dd>${fmtTime(now.toISOString())}</dd>
+      ${gpsRow}
+    </dl>
+    <p style="font-size:12px; color:#6b7280; margin-top:8px;">今日もよろしくお願いします！</p>
+  `);
+}
+
+// ===== STEP4: 退勤打刻 =====
+function submitCheckout() {
+  const now = new Date();
+  const today = todayKey();
+  const gps = currentGPS;
+  const myRecords = records.filter(r => r.name === session.name && r.date === today);
+  const checkin = myRecords.find(r => r.type === 'checkin');
+
+  const record = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    name: session.name,
+    date: today,
+    time: now.toISOString(),
+    type: 'checkout',
+    gps: gps ? { lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy } : null
+  };
+  records.push(record);
+  saveAll();
+
+  // 勤務時間計算
+  let workTime = '';
+  if (checkin) {
+    const mins = Math.round((now - new Date(checkin.time)) / 60000);
+    workTime = `${Math.floor(mins/60)}時間${mins%60}分`;
+  }
+
+  document.getElementById('cardCheckout').style.display = 'none';
+  document.getElementById('cardName').style.display = 'block';
+  document.getElementById('empName').value = '';
+  session = { name: '', alcoholDone: false, alcoholValue: null, checkinId: null };
+  updateSteps(1);
+
+  const gpsRow = gps
+    ? `<dt>退勤場所</dt><dd><a class="map-link" href="${mapsUrl(gps.lat, gps.lng)}" target="_blank">地図で確認 →</a></dd>`
+    : `<dt>退勤場所</dt><dd style="color:#9ca3af;">取得できませんでした</dd>`;
+
+  showModal('blue', '🔵', 'お疲れ様でした！', `
+    <dl>
+      <dt>氏名</dt><dd>${escape(record.name)}</dd>
+      <dt>退勤時刻</dt><dd>${fmtTime(now.toISOString())}</dd>
+      ${checkin ? `<dt>出勤時刻</dt><dd>${fmtTime(checkin.time)}</dd>` : ''}
+      ${workTime ? `<dt>勤務時間</dt><dd>${workTime}</dd>` : ''}
+      ${gpsRow}
+    </dl>
+  `);
+}
+
+// ===== モーダル =====
+function showModal(color, icon, title, detailHTML) {
+  document.getElementById('modalIcon').className = 'modal-icon ' + color;
+  document.getElementById('modalIcon').textContent = icon;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalDetail').innerHTML = detailHTML;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('show'); }
+
+// ===== 管理画面 =====
+function setTodayFilter() {
+  document.getElementById('filterDate').value = todayKey();
+  renderAdmin();
+}
+
+function renderAdmin() {
+  const date = document.getElementById('filterDate').value || todayKey();
+  const dayRec = records.filter(r => r.date === date);
+
+  // Stats
+  const checkins = dayRec.filter(r => r.type === 'checkin');
+  const checkouts = dayRec.filter(r => r.type === 'checkout');
+  const alcoholRec = dayRec.filter(r => r.type === 'alcohol');
+  const alerts = alcoholRec.filter(r => r.value > 0);
+  const checkinNames = new Set(checkins.map(r => r.name));
+  const notYet = roster.filter(n => !checkinNames.has(n)).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">出勤済み</div>
+      <div class="stat-num ok">${checkinNames.size}<span style="font-size:13px;color:#6b7280;"> / ${roster.length}</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">未出勤</div>
+      <div class="stat-num ${notYet > 0 ? 'warn' : 'ok'}">${notYet}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">退勤済み</div>
+      <div class="stat-num">${checkouts.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">アルコール検出</div>
+      <div class="stat-num ${alerts.length > 0 ? 'warn' : 'ok'}">${alerts.length}</div>
+    </div>
+  `;
+
+  // 社員別ステータス
+  const statusHTML = roster.length === 0
+    ? '<div class="empty-state">社員名簿が未登録です</div>'
+    : roster.map(name => {
+        const nr = dayRec.filter(r => r.name === name);
+        const alc = nr.find(r => r.type === 'alcohol');
+        const ci = nr.find(r => r.type === 'checkin');
+        const co = nr.find(r => r.type === 'checkout');
+        const isAlert = alc && alc.value > 0;
+
+        let statusClass, badge, timeText;
+        if (isAlert) {
+          statusClass = 'status-alert'; badge = 'badge-alert'; 
+          badge = '<span class="emp-status-badge badge-alert">⚠️ 検出</span>';
+          timeText = fmtTime(alc.time);
+        } else if (co) {
+          statusClass = 'status-left';
+          badge = '<span class="emp-status-badge badge-left">退勤済</span>';
+          timeText = '退勤 ' + fmtTime(co.time);
+        } else if (ci) {
+          statusClass = 'status-working';
+          badge = '<span class="emp-status-badge badge-working">🟢 出勤中</span>';
+          timeText = '出勤 ' + fmtTime(ci.time);
+        } else if (alc) {
+          statusClass = 'status-checked';
+          badge = '<span class="emp-status-badge badge-checked">✅ AC済</span>';
+          timeText = 'チェック ' + fmtTime(alc.time);
+        } else {
+          statusClass = 'status-none';
+          badge = '<span class="emp-status-badge badge-none">未対応</span>';
+          timeText = '-';
+        }
+        return `
+          <div class="emp-status-card ${statusClass}">
+            <div class="emp-status-name">${escape(name)}</div>
+            ${badge}
+            <div class="emp-status-time">${timeText}</div>
+          </div>`;
+      }).join('');
+  document.getElementById('empStatusGrid').innerHTML = statusHTML;
+
+  // 記録一覧
+  const sorted = [...dayRec].sort((a, b) => b.time.localeCompare(a.time));
+  const tbody = document.getElementById('recordsTbody');
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">記録がありません</td></tr>';
+  } else {
+    tbody.innerHTML = sorted.map(r => {
+      let typeBadge, detail;
+      if (r.type === 'alcohol') {
+        if (r.value > 0) {
+          typeBadge = '<span class="type-badge type-alert">⚠️ アルコール</span>';
+          detail = r.value.toFixed(2) + ' mg/L（検出）';
+        } else {
+          typeBadge = '<span class="type-badge type-alcohol">✅ チェック</span>';
+          detail = '0.00 mg/L（正常）';
+        }
+      } else if (r.type === 'checkin') {
+        typeBadge = '<span class="type-badge type-checkin">🟢 出勤</span>';
+        detail = r.gps
+          ? `<a class="map-link" href="${mapsUrl(r.gps.lat, r.gps.lng)}" target="_blank">📍 地図で確認</a>`
+          : '-';
+      } else {
+        typeBadge = '<span class="type-badge type-checkout">🔴 退勤</span>';
+        const ci = dayRec.find(dr => dr.name === r.name && dr.type === 'checkin');
+        let timeStr = '-';
+        if (ci) {
+          const mins = Math.round((new Date(r.time) - new Date(ci.time)) / 60000);
+          timeStr = `${Math.floor(mins/60)}時間${mins%60}分`;
+        }
+        const gpsLink = r.gps
+          ? ` <a class="map-link" href="${mapsUrl(r.gps.lat, r.gps.lng)}" target="_blank">📍</a>`
+          : '';
+        detail = timeStr + gpsLink;
+      }
+      return `<tr>
+        <td><strong>${escape(r.name)}</strong></td>
+        <td>${typeBadge}</td>
+        <td>${fmtTime(r.time)}</td>
+        <td style="color:#6b7280;">${detail}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  renderRoster();
+}
+
+// ===== CSV出力 =====
+function exportCSV() {
+  const date = document.getElementById('filterDate').value || todayKey();
+  const dayRec = records.filter(r => r.date === date);
+
+  // 社員ごとに集計
+  const rows = roster.map(name => {
+    const nr = dayRec.filter(r => r.name === name);
+    const alc = nr.find(r => r.type === 'alcohol');
+    const ci = nr.find(r => r.type === 'checkin');
+    const co = nr.find(r => r.type === 'checkout');
+    let workMins = '-';
+    if (ci && co) {
+      const mins = Math.round((new Date(co.time) - new Date(ci.time)) / 60000);
+      workMins = `${Math.floor(mins/60)}:${String(mins%60).padStart(2,'0')}`;
+    }
+    return [
+      date, name,
+      alc ? alc.value.toFixed(2) : '-',
+      alc ? (alc.value > 0 ? '検出' : '正常') : '未実施',
+      ci ? fmtTime(ci.time) : '-',
+      ci && ci.gps ? ci.gps.lat : '-',
+      ci && ci.gps ? ci.gps.lng : '-',
+      co ? fmtTime(co.time) : '-',
+      co && co.gps ? co.gps.lat : '-',
+      co && co.gps ? co.gps.lng : '-',
+      workMins
+    ];
+  });
+
+  const headers = ['日付','氏名','測定値(mg/L)','チェック結果','出勤時刻','出勤緯度','出勤経度','退勤時刻','退勤緯度','退勤経度','勤務時間'];
+  const csv = [headers, ...rows].map(r =>
+    r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')
+  ).join('\r\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `勤怠記録_${date}.csv`;
+  a.click();
+  toast('CSVを出力しました');
+}
+
+// ===== 名簿管理 =====
+function renderRoster() {
+  const el = document.getElementById('rosterChips');
+  if (roster.length === 0) {
+    el.innerHTML = '<span style="color:#9ca3af;font-size:12px;">未登録です。社員名を追加してください。</span>';
+    return;
+  }
+  el.innerHTML = roster.map((n, i) => `
+    <div class="roster-chip">
+      ${escape(n)}
+      <button onclick="removeRoster(${i})">×</button>
+    </div>`).join('');
+}
+
+function addRoster() {
+  const input = document.getElementById('newRoster');
+  const name = input.value.trim();
+  if (!name) return;
+  if (roster.includes(name)) { toast('既に登録されています'); return; }
+  roster.push(name);
+  saveAll();
+  input.value = '';
+  renderAdmin();
+  refreshSelect();
+  toast('追加しました');
+}
+
+function removeRoster(i) {
+  if (!confirm(`「${roster[i]}」を削除しますか？`)) return;
+  roster.splice(i, 1);
+  saveAll();
+  renderAdmin();
+  refreshSelect();
+}
+window.removeRoster = removeRoster;
+
+document.getElementById('newRoster').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addRoster();
+});
+
+function clearAll() {
+  if (!confirm('全データを削除します。この操作は取り消せません。')) return;
+  records = []; roster = [];
+  saveAll();
+  renderAdmin();
+  refreshSelect();
+  toast('削除しました');
+}
+
+document.getElementById('filterDate').addEventListener('change', renderAdmin);
+
+// ===== 初期化 =====
+refreshSelect();
+updateSteps(1);
+</script>
+</body>
+</html>
