@@ -2,307 +2,371 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>アルコールチェック＋勤怠管理</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="アルコールチェック">
+<meta name="theme-color" content="#1e3a8a">
+<title>アルコールチェック</title>
 <style>
+  :root {
+    --blue: #2563eb;
+    --blue-dark: #1e3a8a;
+    --blue-light: #dbeafe;
+    --blue-bg: #f0f4ff;
+    --grad: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    --grad-soft: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    --text: #111827;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --success: #059669;
+    --danger: #dc2626;
+    --warn: #f59e0b;
+    --shadow: 0 1px 3px rgba(30, 58, 138, 0.08);
+    --shadow-lg: 0 4px 16px rgba(37, 99, 235, 0.15);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
     background: #f4f6f9;
-    color: #1f2937;
-    font-size: 16px;
+    color: var(--text);
+    line-height: 1.5;
+    font-size: 14px;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* モード切替バー */
   .mode-bar {
-    background: #0d2b4e;
+    background: #1f2937;
     color: #fff;
-    padding: 8px 12px;
+    padding: 6px 10px;
     display: flex;
     gap: 4px;
-    font-size: 12px;
+    font-size: 11px;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
   }
-  .mode-bar-label { opacity: 0.7; font-size: 11px; }
+  .mode-bar-label { opacity: 0.7; font-size: 10px; }
   .mode-toggles { display: flex; gap: 4px; }
   .mode-btn {
     background: rgba(255,255,255,0.1);
     color: #fff;
     border: none;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     font-family: inherit;
-    transition: background 0.2s;
   }
-  .mode-btn.active { background: #2563eb; }
+  .mode-btn.active { background: var(--blue); }
 
   .view { display: none; }
   .view.active { display: block; }
 
   /* ヘッダー */
   .app-header {
-    background: linear-gradient(135deg, #0d2b4e 0%, #1a5fa8 100%);
+    background: var(--grad);
     color: #fff;
-    padding: 20px 16px;
+    padding: 14px 16px 12px;
     text-align: center;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.2);
   }
-  .app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
-  .app-header .sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+  .app-header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
+  .app-header .sub { font-size: 11px; opacity: 0.9; margin-top: 2px; }
 
-  /* 社員入力画面 */
+  /* ========== 従業員入力 ========== */
   .emp-body {
-    padding: 20px 16px;
+    padding: 14px 14px 30px;
     max-width: 480px;
     margin: 0 auto;
   }
-
-  .now-time {
-    background: #fff;
-    border-radius: 12px;
-    padding: 14px;
-    text-align: center;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  }
-  .now-time-label { font-size: 11px; color: #6b7280; }
-  .now-time-value { font-size: 22px; font-weight: 700; color: #0d2b4e; margin-top: 2px; }
-
-  /* ステップ表示 */
-  .steps {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    margin-bottom: 20px;
-  }
-  .step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .step-circle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    background: #e5e7eb;
-    color: #9ca3af;
-    transition: all 0.3s;
-  }
-  .step-circle.active { background: #2563eb; color: #fff; }
-  .step-circle.done { background: #10b981; color: #fff; }
-  .step-label { font-size: 10px; color: #9ca3af; }
-  .step-label.active { color: #2563eb; font-weight: 700; }
-  .step-label.done { color: #10b981; }
-  .step-line { width: 32px; height: 2px; background: #e5e7eb; margin-bottom: 16px; }
-  .step-line.done { background: #10b981; }
-
   .emp-card {
     background: #fff;
-    border-radius: 16px;
-    padding: 24px 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
+    border-radius: 14px;
+    padding: 16px 14px;
+    box-shadow: 0 2px 10px rgba(30, 58, 138, 0.06);
   }
-  .card-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #0d2b4e;
-    margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #e5e7eb;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card-title .step-badge {
-    background: #2563eb;
-    color: #fff;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .field { margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
   .field label {
     display: block;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
     color: #374151;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
   }
-  .req { color: #dc2626; margin-left: 3px; }
+  .field label .req { color: var(--danger); margin-left: 3px; }
+  .field label .optional { color: #9ca3af; font-weight: 500; font-size: 11px; margin-left: 4px; }
 
   .emp-input {
     width: 100%;
-    padding: 14px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 16px;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
     background: #fff;
     font-family: inherit;
-    transition: border-color 0.2s;
+    color: var(--text);
+    transition: all 0.15s;
   }
-  .emp-input:focus { outline: none; border-color: #2563eb; }
+  .emp-input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
   .emp-input.value-input {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 700;
     text-align: center;
-    color: #0d2b4e;
+    letter-spacing: 1px;
+    padding: 14px 14px;
   }
-  .unit-hint { text-align: center; color: #6b7280; font-size: 12px; margin-top: 6px; }
-
-  /* アルコールチェックOK表示 */
-  .check-ok-banner {
-    background: #dcfce7;
-    border: 2px solid #16a34a;
-    border-radius: 12px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  .check-ok-icon { font-size: 24px; }
-  .check-ok-text { font-size: 13px; font-weight: 700; color: #15803d; }
-  .check-ok-sub { font-size: 11px; color: #16a34a; }
-
-  /* ボタン */
-  .main-btn {
+  .unit-hint { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+  .textarea {
     width: 100%;
-    border: none;
-    border-radius: 14px;
-    padding: 18px;
-    font-size: 17px;
-    font-weight: 700;
-    cursor: pointer;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    background: #fff;
     font-family: inherit;
-    transition: transform 0.1s, opacity 0.2s;
-    letter-spacing: 0.5px;
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
   }
-  .main-btn:active { transform: scale(0.98); }
-  .main-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .btn-blue { background: #2563eb; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
-  .btn-green { background: #16a34a; color: #fff; box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
-  .btn-red { background: #dc2626; color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.25); }
-  .btn-gray { background: #6b7280; color: #fff; }
+  .textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
 
-  /* ロック説明 */
-  .lock-notice {
-    background: #fef3c7;
-    border: 2px solid #fbbf24;
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 13px;
-    color: #92400e;
-    text-align: center;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
+  /* セグメントコントロール */
+  .seg-control {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
   }
+  .seg-btn {
+    border: none;
+    background: transparent;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .seg-btn.active {
+    background: #fff;
+    color: var(--blue);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .seg-btn.danger-active.active { color: var(--danger); }
+  .seg-btn.success-active.active { color: var(--success); }
+
+  .now-time {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .now-time-label { font-size: 11px; color: var(--text-muted); }
+  .now-time-value { font-size: 17px; font-weight: 700; color: var(--blue-dark); margin-top: 2px; letter-spacing: 1px; }
+
+  /* 写真アップローダー */
+  .photo-uploader {
+    border: 2px dashed #93c5fd;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    background: var(--blue-bg);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .photo-uploader:hover { background: var(--blue-light); border-color: var(--blue); }
+  .photo-uploader .icon { font-size: 24px; }
+  .photo-uploader .hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .photo-preview-wrap {
+    position: relative;
+    margin-top: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f3f4f6;
+    max-width: 240px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .photo-preview-wrap img { width: 100%; display: block; }
+  .photo-preview-wrap .remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* 確定ボタン */
+  .submit-btn {
+    width: 100%;
+    background: var(--grad);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 6px;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    font-family: inherit;
+    transition: transform 0.1s;
+    letter-spacing: 2px;
+  }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { background: #9ca3af; box-shadow: none; }
 
   /* 完了モーダル */
-  .overlay {
+  .complete-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.5);
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 300;
-    padding: 20px;
+    z-index: 200;
+    padding: 16px;
   }
-  .overlay.show { display: flex; }
-  .modal-card {
+  .complete-overlay.show { display: flex; }
+  .complete-card {
     background: #fff;
-    border-radius: 20px;
-    padding: 32px 24px;
+    border-radius: 16px;
+    padding: 22px 18px 18px;
     text-align: center;
-    max-width: 360px;
+    max-width: 340px;
     width: 100%;
-    animation: pop 0.25s;
+    animation: pop 0.3s;
+    max-height: 90vh;
+    overflow-y: auto;
   }
   @keyframes pop {
     from { transform: scale(0.85); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
-  .modal-icon {
-    width: 72px;
-    height: 72px;
+  .check-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--success);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 16px;
-    font-size: 36px;
+    margin: 0 auto 12px;
+    color: #fff;
+    font-size: 30px;
+    font-weight: bold;
   }
-  .modal-icon.green { background: #dcfce7; }
-  .modal-icon.blue { background: #dbeafe; }
-  .modal-icon.red { background: #fee2e2; }
-  .modal-icon.orange { background: #fff7ed; }
-  .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #111827; }
-  .modal-detail {
+  .check-icon.warn { background: var(--danger); }
+  .complete-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .complete-detail {
     background: #f9fafb;
     border-radius: 10px;
-    padding: 14px;
-    margin: 14px 0;
+    padding: 12px;
+    margin: 12px 0;
     text-align: left;
     font-size: 13px;
   }
-  .modal-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; }
-  .modal-detail dt { color: #6b7280; font-size: 12px; }
-  .modal-detail dd { font-weight: 600; color: #111827; }
-  .modal-btn {
+  .complete-detail dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+  .complete-detail dt { color: var(--text-muted); font-size: 12px; }
+  .complete-detail dd { font-weight: 600; color: var(--text); }
+  .complete-btn {
     width: 100%;
-    padding: 14px;
+    background: var(--blue);
+    color: #fff;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
     font-family: inherit;
-    background: #2563eb;
-    color: #fff;
   }
 
-  /* 管理者画面 */
-  .admin-body { padding: 16px; max-width: 1100px; margin: 0 auto; }
-
-  .date-filter-row {
-    display: flex;
+  /* ========== 総務ダッシュボード ========== */
+  .admin-container { padding: 12px; max-width: 1100px; margin: 0 auto; }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+  }
+  @media (min-width: 640px) {
+    .summary-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: -10px; right: -10px;
+    width: 40px; height: 40px;
+    background: var(--grad-soft);
+    border-radius: 50%;
+    opacity: 0.5;
+  }
+  .stat-label { font-size: 11px; color: var(--text-muted); position: relative; font-weight: 600; }
+  .stat-value { font-size: 22px; font-weight: 800; margin-top: 2px; position: relative; }
+  .stat-value.warn { color: var(--danger); }
+  .stat-value.ok { color: var(--success); }
+  .stat-value small { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+  .admin-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
   }
-  .date-filter-row input {
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
+  .filter-row input, .filter-row select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-family: inherit;
+    flex: 1;
+    min-width: 110px;
   }
-  .btn-sm {
+  .btn {
     padding: 8px 14px;
     border: none;
     border-radius: 8px;
@@ -310,176 +374,177 @@
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
+    transition: transform 0.1s;
   }
-  .btn-sm.blue { background: #2563eb; color: #fff; }
-  .btn-sm.green { background: #16a34a; color: #fff; }
-  .btn-sm.gray { background: #e5e7eb; color: #374151; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-secondary { background: #e5e7eb; color: #374151; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .btn-block { width: 100%; }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  @media(min-width:600px){ .stats-grid { grid-template-columns: repeat(4,1fr); } }
-
-  .stat-card {
+  /* 記録カード */
+  .records-list { display: flex; flex-direction: column; gap: 8px; }
+  .record-card {
     background: #fff;
-    border-radius: 12px;
-    padding: 14px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    border-radius: 10px;
+    padding: 12px;
+    border-left: 4px solid var(--blue);
+    box-shadow: var(--shadow);
+    position: relative;
   }
-  .stat-label { font-size: 11px; color: #6b7280; }
-  .stat-num { font-size: 26px; font-weight: 700; margin-top: 4px; color: #0d2b4e; }
-  .stat-num.warn { color: #dc2626; }
-  .stat-num.ok { color: #16a34a; }
-
-  .admin-section {
-    background: #fff;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 14px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-  }
-  .section-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #0d2b4e;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #e5e7eb;
+  .record-card.alert { border-left-color: var(--danger); background: #fef2f2; }
+  .record-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
   }
-
-  /* 社員ステータスカード */
-  .emp-status-grid {
+  .record-name { font-weight: 700; font-size: 15px; }
+  .record-time { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+  .record-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
+    margin-bottom: 8px;
   }
-  @media(min-width:600px){ .emp-status-grid { grid-template-columns: repeat(3,1fr); } }
-
-  .emp-status-card {
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 12px;
-  }
-  .emp-status-card.status-none { border-color: #e5e7eb; }
-  .emp-status-card.status-checked { border-color: #fbbf24; background: #fffbeb; }
-  .emp-status-card.status-working { border-color: #16a34a; background: #f0fdf4; }
-  .emp-status-card.status-left { border-color: #6b7280; background: #f9fafb; }
-  .emp-status-card.status-alert { border-color: #dc2626; background: #fef2f2; }
-
-  .emp-status-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-  .emp-status-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 20px;
-    margin-bottom: 4px;
-  }
-  .badge-none { background: #e5e7eb; color: #6b7280; }
-  .badge-checked { background: #fef3c7; color: #92400e; }
-  .badge-working { background: #dcfce7; color: #15803d; }
-  .badge-left { background: #e5e7eb; color: #374151; }
-  .badge-alert { background: #fee2e2; color: #dc2626; }
-  .emp-status-time { font-size: 11px; color: #6b7280; }
-
-  /* 記録テーブル */
-  .records-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .records-table th {
+  .record-field {
     background: #f9fafb;
-    padding: 8px 10px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    color: #6b7280;
-    border-bottom: 2px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
   }
-  .records-table td {
-    padding: 10px;
-    border-bottom: 1px solid #f3f4f6;
-    vertical-align: middle;
+  .record-field-label { color: var(--text-muted); font-size: 10px; margin-bottom: 2px; }
+  .record-field-value { font-weight: 700; font-size: 13px; }
+  .record-field-value.value-alert { color: var(--danger); }
+  .record-field-value.value-ok { color: var(--success); }
+  .record-photo {
+    margin-top: 6px;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    max-height: 120px;
   }
-  .records-table tr:last-child td { border-bottom: none; }
-  .type-badge {
+  .record-photo img { width: 100%; height: 100%; object-fit: cover; max-height: 120px; }
+  .record-notes {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #374151;
+    background: #f9fafb;
+    padding: 6px 8px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+  }
+  .record-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .badge {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 11px;
     font-weight: 700;
   }
-  .type-alcohol { background: #dbeafe; color: #1d4ed8; }
-  .type-checkin { background: #dcfce7; color: #15803d; }
-  .type-checkout { background: #e5e7eb; color: #374151; }
-  .type-alert { background: #fee2e2; color: #dc2626; }
+  .badge-ok { background: #d1fae5; color: #065f46; }
+  .badge-ng { background: #fee2e2; color: #991b1b; }
+  .badge-info { background: var(--blue-light); color: #1e3a8a; }
+  .badge-warn { background: #fef3c7; color: #92400e; }
 
-  /* 名簿 */
-  .roster-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .roster-chip {
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .roster-chip button {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-    padding: 0;
-  }
-  .add-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .add-row input {
-    flex: 1;
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-  }
-  .add-row input:focus { border-color: #2563eb; }
-  .empty-state { text-align: center; padding: 24px; color: #9ca3af; font-size: 13px; }
-
-  /* GPS */
-  .gps-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #f0f9ff;
-    border: 1.5px solid #bae6fd;
-    border-radius: 10px;
-    padding: 10px 14px;
+  /* 進捗状況 */
+  .pending-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pending-chip {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 5px 10px;
+    border-radius: 14px;
     font-size: 12px;
-    color: #0369a1;
-    margin-bottom: 12px;
+    font-weight: 600;
   }
-  .gps-status.error { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
-  .gps-status.ok { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
-  .gps-dot { width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; flex-shrink: 0; }
-  .gps-dot.ok { background: #22c55e; animation: pulse 1.5s infinite; }
-  .gps-dot.error { background: #f97316; }
-  @keyframes pulse {
-    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+  .done-chip {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 5px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
   }
-  .map-link {
+  .name-chip-master {
+    background: #dbeafe;
+    color: #1e3a8a;
+    padding: 5px 10px;
+    border-radius: 14px;
+    font-size: 12px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: #2563eb;
+  }
+  .name-chip-master button {
+    background: none;
+    border: none;
+    color: #1e3a8a;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+  .name-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .roster-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .roster-row input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 30px 16px;
+    color: #9ca3af;
+    font-size: 13px;
+  }
+
+  .demo-note {
+    background: #fef3c7;
+    border-left: 3px solid var(--warn);
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
     font-size: 11px;
-    text-decoration: none;
-    font-weight: 600;
+    color: #92400e;
+    line-height: 1.5;
+  }
+
+  /* ライトボックス */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 90vh; object-fit: contain; }
+  .lightbox .close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
   }
 
   /* トースト */
@@ -487,786 +552,950 @@
     position: fixed;
     bottom: 24px;
     left: 50%;
-    transform: translateX(-50%);
-    background: #111827;
+    transform: translateX(-50%) translateY(20px);
+    background: #1f2937;
     color: #fff;
-    padding: 10px 20px;
-    border-radius: 20px;
+    padding: 10px 18px;
+    border-radius: 22px;
     font-size: 13px;
-    font-weight: 600;
-    z-index: 500;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: all 0.3s;
     pointer-events: none;
+    z-index: 400;
     white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   }
-  .toast.show { opacity: 1; }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ローディング */
+  .loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--blue-light);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<!-- モード切替 -->
+<!-- デモ用モード切替 -->
 <div class="mode-bar">
-  <span class="mode-bar-label">📱 表示切替</span>
+  <span class="mode-bar-label">表示切替</span>
   <div class="mode-toggles">
-    <button class="mode-btn active" onclick="switchView('empView', this)">社員用</button>
-    <button class="mode-btn" onclick="switchView('adminView', this)">管理者用</button>
+    <button class="mode-btn active" data-view="emp">📱 従業員入力</button>
+    <button class="mode-btn" data-view="admin">🖥 総務確認</button>
   </div>
 </div>
 
-<!-- ===== 社員用画面 ===== -->
-<div id="empView" class="view active">
+<!-- ============================== -->
+<!-- 従業員入力画面 -->
+<!-- ============================== -->
+<div class="view active" id="empView">
   <div class="app-header">
-    <h1>🚗 アルコールチェック＋勤怠</h1>
-    <div class="sub" id="todayLabel"></div>
+    <h1>アルコールチェック</h1>
+    <div class="sub">業務前に測定値を入力してください</div>
   </div>
+
   <div class="emp-body">
+    <div class="emp-card">
+      <div class="now-time">
+        <div class="now-time-label">現在時刻（確定時に自動記録）</div>
+        <div class="now-time-value" id="nowDisplay">--:--:--</div>
+      </div>
 
-    <!-- 時刻表示 -->
-    <div class="now-time">
-      <div class="now-time-label">現在時刻</div>
-      <div class="now-time-value" id="nowTime">--:--:--</div>
-    </div>
-
-    <!-- ステップ表示 -->
-    <div class="steps">
-      <div class="step">
-        <div class="step-circle" id="stepCircle1">1</div>
-        <div class="step-label" id="stepLabel1">名前</div>
-      </div>
-      <div class="step-line" id="stepLine1"></div>
-      <div class="step">
-        <div class="step-circle" id="stepCircle2">2</div>
-        <div class="step-label" id="stepLabel2">チェック</div>
-      </div>
-      <div class="step-line" id="stepLine2"></div>
-      <div class="step">
-        <div class="step-circle" id="stepCircle3">3</div>
-        <div class="step-label" id="stepLabel3">出勤</div>
-      </div>
-      <div class="step-line" id="stepLine3"></div>
-      <div class="step">
-        <div class="step-circle" id="stepCircle4">4</div>
-        <div class="step-label" id="stepLabel4">退勤</div>
-      </div>
-    </div>
-
-    <!-- STEP1: 名前選択 -->
-    <div class="emp-card" id="cardName">
-      <div class="card-title">
-        <div class="step-badge">1</div>
-        お名前を選択してください
-      </div>
       <div class="field">
-        <select class="emp-input" id="empName">
-          <option value="">▼ 名前を選んでください</option>
-        </select>
+        <label>氏名<span class="req">*</span></label>
+        <input type="text" class="emp-input" id="empName" list="empNameList" placeholder="氏名を入力" autocomplete="off">
         <datalist id="empNameList"></datalist>
       </div>
-      <button class="main-btn btn-blue" id="btnSelectName" onclick="selectName()">
-        次へ →
-      </button>
-    </div>
 
-    <!-- STEP2: アルコールチェック（名前選択後に表示） -->
-    <div class="emp-card" id="cardAlcohol" style="display:none;">
-      <div class="card-title">
-        <div class="step-badge">2</div>
-        アルコール測定値を入力
-      </div>
       <div class="field">
-        <label>測定値<span class="req">*</span></label>
-        <input type="number" class="emp-input value-input" id="empValue"
-               placeholder="0.00" min="0" max="2" step="0.01">
-        <div class="unit-hint">mg/L（アルコールなしの場合は 0.00）</div>
+        <label>車両No.<span class="req">*</span></label>
+        <input type="text" class="emp-input" id="vehicleNo" list="vehicleList" placeholder="例：品川500あ12-34" autocomplete="off">
+        <datalist id="vehicleList"></datalist>
       </div>
-      <button class="main-btn btn-blue" onclick="submitAlcohol()">
-        ✅ チェック結果を送信
-      </button>
-    </div>
 
-    <!-- STEP3: 出勤打刻（チェック完了後に表示） -->
-    <div class="emp-card" id="cardCheckin" style="display:none;">
-      <div class="card-title">
-        <div class="step-badge" style="background:#16a34a;">3</div>
-        出勤打刻
-      </div>
-      <div class="check-ok-banner">
-        <div class="check-ok-icon">✅</div>
-        <div>
-          <div class="check-ok-text">アルコールチェック完了</div>
-          <div class="check-ok-sub" id="checkOkDetail"></div>
+      <div class="field">
+        <label>アルコール検知器の使用<span class="req">*</span></label>
+        <div class="seg-control" id="useDeviceSeg">
+          <button type="button" class="seg-btn active" data-value="使用">使用</button>
+          <button type="button" class="seg-btn" data-value="未使用">未使用</button>
         </div>
       </div>
-      <div class="gps-status" id="gpsStatusCheckin">
-        <div class="gps-dot" id="gpsDotCheckin"></div>
-        <span id="gpsTextCheckin">📍 位置情報を取得中...</span>
-      </div>
-      <button class="main-btn btn-green" id="btnCheckin" onclick="submitCheckin()">
-        🟢 出勤する
-      </button>
-    </div>
 
-    <!-- STEP4: 退勤打刻 -->
-    <div class="emp-card" id="cardCheckout" style="display:none;">
-      <div class="card-title">
-        <div class="step-badge" style="background:#6b7280;">4</div>
-        退勤打刻
+      <div class="field">
+        <label>測定値<span class="req">*</span><span class="optional" id="valueOptionalHint" style="display:none;">（未使用時は0を入力）</span></label>
+        <input type="number" class="emp-input value-input" id="empValue" inputmode="decimal" step="0.01" min="0" max="2" placeholder="0.00">
+        <div class="unit-hint">単位：mg/L</div>
       </div>
-      <div class="check-ok-banner" style="border-color:#16a34a; background:#f0fdf4;">
-        <div class="check-ok-icon">🟢</div>
-        <div>
-          <div class="check-ok-text" style="color:#15803d;">出勤中</div>
-          <div class="check-ok-sub" id="checkinTimeLabel" style="color:#16a34a;"></div>
+
+      <div class="field">
+        <label>酒気帯びの有無<span class="req">*</span></label>
+        <div class="seg-control" id="hasAlcoholSeg">
+          <button type="button" class="seg-btn success-active active" data-value="無">無し</button>
+          <button type="button" class="seg-btn danger-active" data-value="有">有り</button>
         </div>
       </div>
-      <div class="gps-status" id="gpsStatusCheckout">
-        <div class="gps-dot" id="gpsDotCheckout"></div>
-        <span id="gpsTextCheckout">📍 位置情報を取得中...</span>
-      </div>
-      <button class="main-btn btn-gray" onclick="submitCheckout()">
-        🔴 退勤する
-      </button>
-    </div>
 
-    <!-- アルコール検出時の警告 -->
-    <div class="emp-card" id="cardAlert" style="display:none;">
-      <div class="card-title" style="color:#dc2626;">
-        ⚠️ アルコール検出
+      <div class="field" id="photoField">
+        <label>検知器の写真<span class="req" id="photoReq">*</span><span class="optional" id="photoOptional" style="display:none;">（任意）</span></label>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none;">
+        <div class="photo-uploader" id="photoUploader">
+          <div class="icon">📷</div>
+          <div style="font-size:13px; font-weight:700; color:var(--blue); margin-top:4px;">タップして写真を撮影/選択</div>
+          <div class="hint">検知器の表示画面が見えるように撮影</div>
+        </div>
+        <div class="photo-preview-wrap" id="photoPreview" style="display:none;">
+          <img id="photoPreviewImg" src="" alt="">
+          <button class="remove" id="photoRemove">×</button>
+        </div>
+        <div id="uploadingHint" style="display:none; text-align:center; margin-top:8px; color:var(--text-muted); font-size:12px;">
+          <span class="loading"></span> 画像を処理中…
+        </div>
       </div>
-      <div class="lock-notice">
-        <span>🔒</span>
-        アルコールが検出されたため出勤できません。管理者に連絡してください。
-      </div>
-      <button class="main-btn btn-gray" onclick="resetEmpForm()">← 最初に戻る</button>
-    </div>
 
+      <div class="field">
+        <label>備考<span class="optional">（任意）</span></label>
+        <textarea class="textarea" id="notes" placeholder="健康状態・体調・特記事項など"></textarea>
+      </div>
+
+      <button class="submit-btn" id="submitBtn">確 定</button>
+    </div>
   </div>
 </div>
 
-<!-- ===== 管理者用画面 ===== -->
-<div id="adminView" class="view">
-  <div class="app-header">
-    <h1>📊 勤怠管理ダッシュボード</h1>
-    <div class="sub" id="adminDateLabel"></div>
+<!-- 完了モーダル -->
+<div class="complete-overlay" id="completeOverlay">
+  <div class="complete-card">
+    <div class="check-icon" id="checkIcon">✓</div>
+    <div class="complete-title" id="completeTitle">送信完了</div>
+    <div class="complete-detail">
+      <dl>
+        <dt>氏名</dt><dd id="resName">-</dd>
+        <dt>車両No.</dt><dd id="resVehicle">-</dd>
+        <dt>検知器</dt><dd id="resDevice">-</dd>
+        <dt>測定値</dt><dd id="resValue">-</dd>
+        <dt>酒気帯び</dt><dd id="resHasAlcohol">-</dd>
+        <dt>送信時刻</dt><dd id="resTime">-</dd>
+      </dl>
+    </div>
+    <button class="complete-btn" id="closeCompleteBtn">OK</button>
   </div>
-  <div class="admin-body">
+</div>
 
-    <div class="date-filter-row">
-      <input type="date" id="filterDate">
-      <button class="btn-sm blue" onclick="setTodayFilter()">今日</button>
-      <button class="btn-sm green" onclick="exportCSV()">📥 CSV出力</button>
+<!-- ============================== -->
+<!-- 総務ダッシュボード -->
+<!-- ============================== -->
+<div class="view" id="adminView">
+  <div class="app-header">
+    <h1>総務 確認画面</h1>
+    <div class="sub">アルコールチェック 進捗状況</div>
+  </div>
+
+  <div class="admin-container">
+    <div class="demo-note">
+      <strong>※ デモ版：</strong> この端末内のデータのみ表示。実運用では従業員のスマホからの入力をクラウドに集約します。
     </div>
 
     <!-- サマリー -->
-    <div class="stats-grid" id="statsGrid"></div>
+    <div class="summary-grid" id="summaryGrid"></div>
 
-    <!-- 社員別ステータス -->
+    <!-- 本日の進捗 -->
     <div class="admin-section">
-      <div class="section-title">👥 本日の社員ステータス</div>
-      <div class="emp-status-grid" id="empStatusGrid"></div>
+      <div class="section-title">
+        <span>📅 本日の提出状況（<span id="todayDate"></span>）</span>
+      </div>
+      <div id="progressBlock"></div>
     </div>
 
     <!-- 記録一覧 -->
     <div class="admin-section">
       <div class="section-title">
-        📋 記録一覧
-        <button class="btn-sm gray" onclick="renderAdmin()">🔄 更新</button>
+        <span>📋 記録一覧</span>
+        <button class="btn btn-success btn-sm" id="exportBtn">CSV出力</button>
       </div>
-      <div style="overflow-x:auto;">
-        <table class="records-table">
-          <thead>
-            <tr>
-              <th>氏名</th>
-              <th>種別</th>
-              <th>時刻</th>
-              <th>詳細</th>
-            </tr>
-          </thead>
-          <tbody id="recordsTbody"></tbody>
-        </table>
+      <div class="filter-row">
+        <input type="date" id="filterDate" title="日付で絞り込み">
+        <input type="text" id="filterName" placeholder="氏名で絞り込み">
+        <select id="filterAlert">
+          <option value="">すべて</option>
+          <option value="alert">酒気帯び有のみ</option>
+          <option value="未使用">検知器未使用のみ</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="clearFilter">解除</button>
       </div>
+      <div class="records-list" id="recordsList"></div>
     </div>
 
-    <!-- 社員名簿 -->
+    <!-- 名簿管理 -->
     <div class="admin-section">
-      <div class="section-title">📝 社員名簿</div>
-      <div class="add-row">
-        <input type="text" id="newRoster" placeholder="社員名を入力">
-        <button class="btn-sm blue" onclick="addRoster()">追加</button>
+      <div class="section-title"><span>👥 従業員名簿</span></div>
+      <div class="roster-row">
+        <input type="text" id="newRoster" placeholder="従業員名を追加">
+        <button class="btn btn-primary btn-sm" id="addRoster">追加</button>
       </div>
-      <div class="roster-chips" id="rosterChips"></div>
+      <div class="name-list" id="rosterList"></div>
     </div>
 
-    <!-- 危険ゾーン -->
+    <!-- 車両マスター管理 -->
     <div class="admin-section">
-      <div class="section-title" style="color:#dc2626;">⚠️ データ管理</div>
-      <button class="btn-sm gray" onclick="clearAll()" style="width:100%; padding:12px; font-size:13px;">全データを削除する</button>
+      <div class="section-title"><span>🚚 車両マスター</span></div>
+      <div class="roster-row">
+        <input type="text" id="newVehicle" placeholder="車両No.を追加">
+        <button class="btn btn-primary btn-sm" id="addVehicle">追加</button>
+      </div>
+      <div class="name-list" id="vehicleListMaster"></div>
     </div>
 
+    <!-- データ管理 -->
+    <div class="admin-section">
+      <div class="section-title"><span>💾 データ管理</span></div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" id="exportJsonBtn">JSONバックアップ</button>
+        <button class="btn btn-secondary btn-sm" id="importJsonBtn">JSON復元</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+        <button class="btn btn-secondary btn-sm" id="seedDemo">サンプル投入</button>
+        <button class="btn btn-danger btn-sm" id="clearAll">全削除</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- 完了モーダル -->
-<div class="overlay" id="overlay">
-  <div class="modal-card">
-    <div class="modal-icon" id="modalIcon"></div>
-    <div class="modal-title" id="modalTitle"></div>
-    <div class="modal-detail" id="modalDetail"></div>
-    <button class="modal-btn" id="modalBtn" onclick="closeModal()">OK</button>
-  </div>
+<!-- ライトボックス -->
+<div class="lightbox" id="lightbox">
+  <button class="close" id="lightboxClose">×</button>
+  <img id="lightboxImg" src="" alt="">
 </div>
 
-<!-- トースト -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== ストレージ =====
-const S = {
-  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
-};
-let roster = S.get('kintai_roster') || [];
-let records = S.get('kintai_records') || [];
-function saveAll() { S.set('kintai_roster', roster); S.set('kintai_records', records); }
+// ===========================================================
+// IndexedDB Wrapper
+// ===========================================================
+const DB_NAME = 'alcohol_check_v2';
+const DB_VERSION = 1;
+let db = null;
 
-// ===== セッション状態（当日のみ） =====
-let session = { name: '', alcoholDone: false, alcoholValue: null, checkinId: null };
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onerror = () => reject(req.error);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('records')) {
+        const s = d.createObjectStore('records', { keyPath: 'id' });
+        s.createIndex('byDate', 'submittedAt');
+        s.createIndex('byName', 'name');
+      }
+      if (!d.objectStoreNames.contains('photos')) {
+        d.createObjectStore('photos', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('roster')) {
+        d.createObjectStore('roster', { keyPath: 'name' });
+      }
+      if (!d.objectStoreNames.contains('vehicles')) {
+        d.createObjectStore('vehicles', { keyPath: 'no' });
+      }
+    };
+    req.onsuccess = () => { db = req.result; resolve(db); };
+  });
+}
+function tx(stores, mode = 'readonly') { return db.transaction(stores, mode); }
+function pAll(req) {
+  return new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
+}
+async function getAllRecords() { return pAll(tx('records').objectStore('records').getAll()); }
+async function putRecord(r) { return pAll(tx('records', 'readwrite').objectStore('records').put(r)); }
+async function delRecordDB(id) { return pAll(tx('records', 'readwrite').objectStore('records').delete(id)); }
+async function getPhoto(id) { return pAll(tx('photos').objectStore('photos').get(id)); }
+async function putPhoto(p) { return pAll(tx('photos', 'readwrite').objectStore('photos').put(p)); }
+async function delPhotoDB(id) { return pAll(tx('photos', 'readwrite').objectStore('photos').delete(id)); }
+async function getAllRoster() { return pAll(tx('roster').objectStore('roster').getAll()); }
+async function putRosterDB(name) { return pAll(tx('roster', 'readwrite').objectStore('roster').put({ name })); }
+async function delRosterDB(name) { return pAll(tx('roster', 'readwrite').objectStore('roster').delete(name)); }
+async function getAllVehicles() { return pAll(tx('vehicles').objectStore('vehicles').getAll()); }
+async function putVehicleDB(no) { return pAll(tx('vehicles', 'readwrite').objectStore('vehicles').put({ no })); }
+async function delVehicleDB(no) { return pAll(tx('vehicles', 'readwrite').objectStore('vehicles').delete(no)); }
 
-// ===== GPS =====
-let currentGPS = null; // { lat, lng, accuracy }
+// ===========================================================
+// Util
+// ===========================================================
+const pad = n => String(n).padStart(2, '0');
+const escapeHtml = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,9);
+const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const fmtDate = d => `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+const fmtDateTime = iso => { const d = new Date(iso); return `${fmtDate(d)} ${fmtTime(d)}`; };
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const isoToDateKey = iso => iso.slice(0, 10);
 
-function getGPS(dotId, textId, statusId) {
-  const dot = document.getElementById(dotId);
-  const text = document.getElementById(textId);
-  const box = document.getElementById(statusId);
-  currentGPS = null;
-  if (!navigator.geolocation) {
-    dot.className = 'gps-dot error';
-    text.textContent = '📍 位置情報は非対応のブラウザです';
-    box.className = 'gps-status error';
-    return;
-  }
-  dot.className = 'gps-dot';
-  text.textContent = '📍 位置情報を取得中...';
-  box.className = 'gps-status';
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      currentGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) };
-      dot.className = 'gps-dot ok';
-      text.innerHTML = `📍 取得完了（精度 ±${currentGPS.accuracy}m） <a class="map-link" href="https://maps.google.com/?q=${currentGPS.lat},${currentGPS.lng}" target="_blank">地図で確認 →</a>`;
-      box.className = 'gps-status ok';
-    },
-    err => {
-      dot.className = 'gps-dot error';
-      text.textContent = err.code === 1 ? '⚠️ 位置情報の許可が必要です（設定から許可してください）' : '⚠️ 位置情報を取得できませんでした';
-      box.className = 'gps-status error';
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-function mapsUrl(lat, lng) {
-  return `https://maps.google.com/?q=${lat},${lng}`;
+// ===========================================================
+// State
+// ===========================================================
+let records = [];
+let roster = [];
+let vehicles = [];
+let currentPhotoBlob = null;
+let currentPhotoUrl = null;
+let useDevice = '使用';
+let hasAlcohol = '無';
+const blobUrls = new Map();
+
+// ===========================================================
+// Init
+// ===========================================================
+async function bootstrap() {
+  await openDB();
+  await migrateFromLocalStorage();
+  await loadAll();
+  initUI();
 }
 
-// ===== ユーティリティ =====
-function todayKey() { return new Date().toISOString().slice(0,10); }
-function fmtTime(iso) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
-}
-function fmtDateTime(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('ja-JP', { month:'2-digit', day:'2-digit' }) + ' ' +
-         d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
-}
-function escape(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2200);
+async function loadAll() {
+  records = await getAllRecords();
+  roster = (await getAllRoster()).map(r => r.name);
+  vehicles = (await getAllVehicles()).map(v => v.no);
 }
 
-// ===== 時刻更新 =====
-function updateClock() {
-  const now = new Date();
-  document.getElementById('nowTime').textContent =
-    now.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  document.getElementById('todayLabel').textContent =
-    now.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+async function migrateFromLocalStorage() {
+  const old = localStorage.getItem('ac_records_v2');
+  if (!old) return;
+  try {
+    const list = JSON.parse(old);
+    const oldRoster = JSON.parse(localStorage.getItem('ac_roster_v2') || '[]');
+    if (!Array.isArray(list)) return;
+    const existing = await getAllRecords();
+    if (existing.length > 0) return;
+    for (const n of oldRoster) await putRosterDB(n);
+    for (const r of list) {
+      await putRecord({
+        id: r.id,
+        name: r.name,
+        vehicleNo: '',
+        useDevice: '使用',
+        value: r.value || 0,
+        hasAlcohol: r.value > 0 ? '有' : '無',
+        photoId: null,
+        notes: '',
+        submittedAt: r.submittedAt
+      });
+    }
+    localStorage.removeItem('ac_records_v2');
+    localStorage.removeItem('ac_roster_v2');
+    showToast('旧データを移行しました');
+  } catch (e) { console.error('migration failed', e); }
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-// ===== ビュー切替 =====
-function switchView(id, btn) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add('active');
-  if (id === 'adminView') {
-    document.getElementById('adminDateLabel').textContent =
-      new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
-    document.getElementById('filterDate').value = todayKey();
-    renderAdmin();
-  }
+// ===========================================================
+// UI Init
+// ===========================================================
+function initUI() {
+  // モード切替
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.view + 'View').classList.add('active');
+      window.scrollTo(0, 0);
+      if (btn.dataset.view === 'admin') renderAdmin();
+      if (btn.dataset.view === 'emp') refreshDatalists();
+    });
+  });
+
+  // 時刻表示
+  updateNow();
+  setInterval(updateNow, 1000);
+
+  // セグメントコントロール（検知器使用）
+  document.querySelectorAll('#useDeviceSeg .seg-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#useDeviceSeg .seg-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      useDevice = b.dataset.value;
+      updateDeviceUI();
+    });
+  });
+  // セグメントコントロール（酒気帯び）
+  document.querySelectorAll('#hasAlcoholSeg .seg-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#hasAlcoholSeg .seg-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      hasAlcohol = b.dataset.value;
+    });
+  });
+
+  // 測定値変更時、自動で酒気帯び判定（検知器使用時のみ）
+  document.getElementById('empValue').addEventListener('input', e => {
+    if (useDevice !== '使用') return;
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) {
+      setHasAlcohol(v > 0 ? '有' : '無');
+    }
+  });
+
+  // 写真
+  document.getElementById('photoUploader').addEventListener('click', () => {
+    document.getElementById('photoInput').click();
+  });
+  document.getElementById('photoInput').addEventListener('change', handlePhotoUpload);
+  document.getElementById('photoRemove').addEventListener('click', () => {
+    clearCurrentPhoto();
+  });
+
+  // 確定
+  document.getElementById('submitBtn').addEventListener('click', submitRecord);
+  document.getElementById('closeCompleteBtn').addEventListener('click', () => {
+    document.getElementById('completeOverlay').classList.remove('show');
+  });
+
+  // 総務画面のイベント
+  document.getElementById('addRoster').addEventListener('click', addRoster);
+  document.getElementById('newRoster').addEventListener('keydown', e => { if (e.key === 'Enter') addRoster(); });
+  document.getElementById('addVehicle').addEventListener('click', addVehicle);
+  document.getElementById('newVehicle').addEventListener('keydown', e => { if (e.key === 'Enter') addVehicle(); });
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
+  document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+  document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', importJson);
+  document.getElementById('seedDemo').addEventListener('click', seedSample);
+  document.getElementById('clearAll').addEventListener('click', clearAllData);
+  ['filterDate','filterName','filterAlert'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderRecordsList);
+  });
+  document.getElementById('clearFilter').addEventListener('click', () => {
+    document.getElementById('filterDate').value = '';
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterAlert').value = '';
+    renderRecordsList();
+  });
+
+  // ライトボックス
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', e => {
+    if (e.target.id === 'lightbox') closeLightbox();
+  });
+
+  updateDeviceUI();
+  refreshDatalists();
 }
 
-// ===== 名前選択肢を更新 =====
-function refreshSelect() {
-  const sel = document.getElementById('empName');
-  sel.innerHTML = '<option value="">▼ 名前を選んでください</option>';
-  roster.forEach(n => {
-    const o = document.createElement('option');
-    o.value = n; o.textContent = n;
-    sel.appendChild(o);
+function setHasAlcohol(v) {
+  hasAlcohol = v;
+  document.querySelectorAll('#hasAlcoholSeg .seg-btn').forEach(x => {
+    x.classList.toggle('active', x.dataset.value === v);
   });
 }
 
-// ===== ステップ表示更新 =====
-function updateSteps(step) {
-  for (let i = 1; i <= 4; i++) {
-    const c = document.getElementById('stepCircle' + i);
-    const l = document.getElementById('stepLabel' + i);
-    c.className = 'step-circle';
-    l.className = 'step-label';
-    if (i < step) { c.classList.add('done'); c.textContent = '✓'; l.classList.add('done'); }
-    else if (i === step) { c.classList.add('active'); l.classList.add('active'); }
-    else { c.textContent = i; }
-  }
-  for (let i = 1; i <= 3; i++) {
-    const line = document.getElementById('stepLine' + i);
-    line.className = 'step-line' + (i < step ? ' done' : '');
-  }
+function updateDeviceUI() {
+  const isUsed = useDevice === '使用';
+  document.getElementById('photoReq').style.display = isUsed ? 'inline' : 'none';
+  document.getElementById('photoOptional').style.display = isUsed ? 'none' : 'inline';
+  document.getElementById('valueOptionalHint').style.display = isUsed ? 'none' : 'inline';
 }
 
-// ===== 社員フォームリセット =====
-function resetEmpForm() {
-  session = { name: '', alcoholDone: false, alcoholValue: null, checkinId: null };
-  ['cardName','cardAlcohol','cardCheckin','cardCheckout','cardAlert'].forEach(id => {
-    document.getElementById(id).style.display = id === 'cardName' ? 'block' : 'none';
+function updateNow() {
+  document.getElementById('nowDisplay').textContent = fmtTime(new Date());
+}
+
+function refreshDatalists() {
+  document.getElementById('empNameList').innerHTML = roster.map(n => `<option value="${escapeHtml(n)}">`).join('');
+  document.getElementById('vehicleList').innerHTML = vehicles.map(v => `<option value="${escapeHtml(v)}">`).join('');
+}
+
+// ===========================================================
+// 写真処理
+// ===========================================================
+async function handlePhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('uploadingHint').style.display = 'block';
+  try {
+    currentPhotoBlob = await resizeImageToBlob(file, 1400, 0.78);
+    if (currentPhotoUrl) URL.revokeObjectURL(currentPhotoUrl);
+    currentPhotoUrl = URL.createObjectURL(currentPhotoBlob);
+    document.getElementById('photoPreviewImg').src = currentPhotoUrl;
+    document.getElementById('photoPreview').style.display = 'block';
+    document.getElementById('photoUploader').style.display = 'none';
+  } catch (err) {
+    console.error(err);
+    showToast('画像の読み込みに失敗しました');
+  }
+  document.getElementById('uploadingHint').style.display = 'none';
+  e.target.value = '';
+}
+
+function resizeImageToBlob(file, maxSize, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > h && w > maxSize) { h = h * maxSize / w; w = maxSize; }
+        else if (h > maxSize) { w = w * maxSize / h; h = maxSize; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
-  document.getElementById('empName').value = '';
-  document.getElementById('empValue').value = '';
-  updateSteps(1);
 }
 
-// ===== STEP1: 名前選択 =====
-function selectName() {
-  const name = document.getElementById('empName').value;
-  if (!name) { toast('名前を選択してください'); return; }
-  session.name = name;
-
-  // 本日の出勤・退勤状態を確認
-  const today = todayKey();
-  const myRecords = records.filter(r => r.name === name && r.date === today);
-  const checkin = myRecords.find(r => r.type === 'checkin');
-  const checkout = myRecords.find(r => r.type === 'checkout');
-
-  if (checkout) {
-    // 退勤済み
-    showModal('blue', '📋', '本日の記録', `
-      <dl>
-        <dt>氏名</dt><dd>${escape(name)}</dd>
-        <dt>出勤</dt><dd>${checkin ? fmtTime(checkin.time) : '-'}</dd>
-        <dt>退勤</dt><dd>${fmtTime(checkout.time)}</dd>
-      </dl>
-    `);
-    return;
-  }
-
-  if (checkin) {
-    // 出勤済み → 退勤へ
-    session.checkinId = checkin.id;
-    document.getElementById('cardName').style.display = 'none';
-    document.getElementById('cardCheckout').style.display = 'block';
-    document.getElementById('checkinTimeLabel').textContent = '出勤時刻：' + fmtTime(checkin.time);
-    updateSteps(4);
-    return;
-  }
-
-  // アルコールチェック済みか確認
-  const alcoholRecord = myRecords.find(r => r.type === 'alcohol');
-  if (alcoholRecord && alcoholRecord.value === 0) {
-    session.alcoholDone = true;
-    session.alcoholValue = 0;
-    document.getElementById('cardName').style.display = 'none';
-    document.getElementById('cardCheckin').style.display = 'block';
-    document.getElementById('checkOkDetail').textContent =
-      '測定値：0.00 mg/L（' + fmtTime(alcoholRecord.time) + '）';
-    getGPS('gpsDotCheckin', 'gpsTextCheckin', 'gpsStatusCheckin');
-    updateSteps(3);
-    return;
-  }
-
-  // アルコールチェックへ
-  document.getElementById('cardName').style.display = 'none';
-  document.getElementById('cardAlcohol').style.display = 'block';
-  updateSteps(2);
+function clearCurrentPhoto() {
+  if (currentPhotoUrl) { URL.revokeObjectURL(currentPhotoUrl); currentPhotoUrl = null; }
+  currentPhotoBlob = null;
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoUploader').style.display = 'block';
 }
 
-// ===== STEP2: アルコールチェック =====
-function submitAlcohol() {
-  const raw = document.getElementById('empValue').value;
-  if (raw === '' || isNaN(parseFloat(raw))) { toast('測定値を入力してください'); return; }
-  const val = parseFloat(raw);
-  if (val < 0 || val > 2) { toast('測定値が不正です（0.00 〜 2.00）'); return; }
+// ===========================================================
+// 確定処理
+// ===========================================================
+async function submitRecord() {
+  const name = document.getElementById('empName').value.trim();
+  const vehicleNo = document.getElementById('vehicleNo').value.trim();
+  const valueRaw = document.getElementById('empValue').value;
+  const notes = document.getElementById('notes').value.trim();
+
+  if (!name) { showToast('氏名を入力してください'); return; }
+  if (!vehicleNo) { showToast('車両No.を入力してください'); return; }
+  if (valueRaw === '' || isNaN(parseFloat(valueRaw))) { showToast('測定値を入力してください'); return; }
+  const value = parseFloat(valueRaw);
+  if (value < 0 || value > 2) { showToast('測定値が不正です'); return; }
+  if (useDevice === '使用' && !currentPhotoBlob) {
+    showToast('検知器の写真を撮影してください'); return;
+  }
+
+  const recordId = uid();
+  let photoId = null;
+  if (currentPhotoBlob) {
+    photoId = uid();
+    await putPhoto({ id: photoId, blob: currentPhotoBlob, mimeType: currentPhotoBlob.type });
+  }
 
   const now = new Date();
   const record = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
-    name: session.name,
-    date: todayKey(),
-    time: now.toISOString(),
-    type: 'alcohol',
-    value: val
+    id: recordId,
+    name,
+    vehicleNo,
+    useDevice,
+    value,
+    hasAlcohol,
+    photoId,
+    notes,
+    submittedAt: now.toISOString()
   };
+  await putRecord(record);
+  // 名簿・車両マスターに無ければ自動登録
+  if (!roster.includes(name)) { await putRosterDB(name); roster.push(name); }
+  if (!vehicles.includes(vehicleNo)) { await putVehicleDB(vehicleNo); vehicles.push(vehicleNo); }
   records.push(record);
-  saveAll();
-  session.alcoholValue = val;
-  session.alcoholDone = true;
 
-  document.getElementById('cardAlcohol').style.display = 'none';
-
-  if (val > 0) {
-    // アルコール検出
-    document.getElementById('cardAlert').style.display = 'block';
-    updateSteps(2);
-    showModal('red', '⚠️', 'アルコール検出', `
-      <dl>
-        <dt>氏名</dt><dd>${escape(session.name)}</dd>
-        <dt>測定値</dt><dd style="color:#dc2626;">${val.toFixed(2)} mg/L</dd>
-        <dt>時刻</dt><dd>${fmtTime(now.toISOString())}</dd>
-      </dl>
-      <p style="color:#dc2626; font-size:12px; margin-top:8px;">管理者に報告してください。</p>
-    `);
+  // 完了モーダル表示
+  document.getElementById('resName').textContent = name;
+  document.getElementById('resVehicle').textContent = vehicleNo;
+  document.getElementById('resDevice').textContent = useDevice;
+  document.getElementById('resValue').textContent = value.toFixed(2) + ' mg/L';
+  document.getElementById('resHasAlcohol').textContent = hasAlcohol === '有' ? '有り' : '無し';
+  document.getElementById('resTime').textContent = fmtDateTime(record.submittedAt);
+  const icon = document.getElementById('checkIcon');
+  const title = document.getElementById('completeTitle');
+  if (hasAlcohol === '有' || value > 0) {
+    icon.className = 'check-icon warn';
+    icon.textContent = '!';
+    title.textContent = '⚠ アルコール検出';
   } else {
-    // 正常 → 出勤へ
-    document.getElementById('cardCheckin').style.display = 'block';
-    document.getElementById('checkOkDetail').textContent =
-      '測定値：0.00 mg/L（' + fmtTime(now.toISOString()) + '）';
-    getGPS('gpsDotCheckin', 'gpsTextCheckin', 'gpsStatusCheckin');
-    updateSteps(3);
+    icon.className = 'check-icon';
+    icon.textContent = '✓';
+    title.textContent = '送信完了';
   }
-}
+  document.getElementById('completeOverlay').classList.add('show');
 
-// ===== STEP3: 出勤打刻 =====
-function submitCheckin() {
-  const now = new Date();
-  const gps = currentGPS;
-  const record = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
-    name: session.name,
-    date: todayKey(),
-    time: now.toISOString(),
-    type: 'checkin',
-    gps: gps ? { lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy } : null
-  };
-  records.push(record);
-  saveAll();
-  session.checkinId = record.id;
-
-  document.getElementById('cardCheckin').style.display = 'none';
-  document.getElementById('cardCheckout').style.display = 'block';
-  document.getElementById('checkinTimeLabel').textContent = '出勤時刻：' + fmtTime(now.toISOString());
-  getGPS('gpsDotCheckout', 'gpsTextCheckout', 'gpsStatusCheckout');
-  updateSteps(4);
-
-  const gpsRow = gps
-    ? `<dt>出勤場所</dt><dd><a class="map-link" href="${mapsUrl(gps.lat, gps.lng)}" target="_blank">地図で確認 →</a></dd>`
-    : `<dt>出勤場所</dt><dd style="color:#9ca3af;">取得できませんでした</dd>`;
-
-  showModal('green', '🟢', '出勤しました！', `
-    <dl>
-      <dt>氏名</dt><dd>${escape(session.name)}</dd>
-      <dt>出勤時刻</dt><dd>${fmtTime(now.toISOString())}</dd>
-      ${gpsRow}
-    </dl>
-    <p style="font-size:12px; color:#6b7280; margin-top:8px;">今日もよろしくお願いします！</p>
-  `);
-}
-
-// ===== STEP4: 退勤打刻 =====
-function submitCheckout() {
-  const now = new Date();
-  const today = todayKey();
-  const gps = currentGPS;
-  const myRecords = records.filter(r => r.name === session.name && r.date === today);
-  const checkin = myRecords.find(r => r.type === 'checkin');
-
-  const record = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
-    name: session.name,
-    date: today,
-    time: now.toISOString(),
-    type: 'checkout',
-    gps: gps ? { lat: gps.lat, lng: gps.lng, accuracy: gps.accuracy } : null
-  };
-  records.push(record);
-  saveAll();
-
-  // 勤務時間計算
-  let workTime = '';
-  if (checkin) {
-    const mins = Math.round((now - new Date(checkin.time)) / 60000);
-    workTime = `${Math.floor(mins/60)}時間${mins%60}分`;
-  }
-
-  document.getElementById('cardCheckout').style.display = 'none';
-  document.getElementById('cardName').style.display = 'block';
+  // フォームクリア
   document.getElementById('empName').value = '';
-  session = { name: '', alcoholDone: false, alcoholValue: null, checkinId: null };
-  updateSteps(1);
-
-  const gpsRow = gps
-    ? `<dt>退勤場所</dt><dd><a class="map-link" href="${mapsUrl(gps.lat, gps.lng)}" target="_blank">地図で確認 →</a></dd>`
-    : `<dt>退勤場所</dt><dd style="color:#9ca3af;">取得できませんでした</dd>`;
-
-  showModal('blue', '🔵', 'お疲れ様でした！', `
-    <dl>
-      <dt>氏名</dt><dd>${escape(record.name)}</dd>
-      <dt>退勤時刻</dt><dd>${fmtTime(now.toISOString())}</dd>
-      ${checkin ? `<dt>出勤時刻</dt><dd>${fmtTime(checkin.time)}</dd>` : ''}
-      ${workTime ? `<dt>勤務時間</dt><dd>${workTime}</dd>` : ''}
-      ${gpsRow}
-    </dl>
-  `);
+  document.getElementById('vehicleNo').value = '';
+  document.getElementById('empValue').value = '';
+  document.getElementById('notes').value = '';
+  clearCurrentPhoto();
+  // 検知器使用と酒気帯びはデフォルトに戻さない（連続使用想定）
+  setHasAlcohol('無');
+  refreshDatalists();
 }
 
-// ===== モーダル =====
-function showModal(color, icon, title, detailHTML) {
-  document.getElementById('modalIcon').className = 'modal-icon ' + color;
-  document.getElementById('modalIcon').textContent = icon;
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalDetail').innerHTML = detailHTML;
-  document.getElementById('overlay').classList.add('show');
-}
-function closeModal() { document.getElementById('overlay').classList.remove('show'); }
-
-// ===== 管理画面 =====
-function setTodayFilter() {
-  document.getElementById('filterDate').value = todayKey();
-  renderAdmin();
-}
-
+// ===========================================================
+// 総務ダッシュボード
+// ===========================================================
 function renderAdmin() {
-  const date = document.getElementById('filterDate').value || todayKey();
-  const dayRec = records.filter(r => r.date === date);
+  document.getElementById('todayDate').textContent = fmtDate(new Date());
+  renderSummary();
+  renderProgress();
+  renderRecordsList();
+  renderRosterList();
+  renderVehicleList();
+}
 
-  // Stats
-  const checkins = dayRec.filter(r => r.type === 'checkin');
-  const checkouts = dayRec.filter(r => r.type === 'checkout');
-  const alcoholRec = dayRec.filter(r => r.type === 'alcohol');
-  const alerts = alcoholRec.filter(r => r.value > 0);
-  const checkinNames = new Set(checkins.map(r => r.name));
-  const notYet = roster.filter(n => !checkinNames.has(n)).length;
+function renderSummary() {
+  const t = todayKey();
+  const today = records.filter(r => isoToDateKey(r.submittedAt) === t);
+  const submitted = new Set(today.map(r => r.name));
+  const detected = today.filter(r => r.hasAlcohol === '有').length;
+  const noDevice = today.filter(r => r.useDevice === '未使用').length;
+  const pending = roster.filter(n => !submitted.has(n)).length;
 
-  document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">出勤済み</div>
-      <div class="stat-num ok">${checkinNames.size}<span style="font-size:13px;color:#6b7280;"> / ${roster.length}</span></div>
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">本日の提出</div><div class="stat-value">${submitted.size}<small> / ${roster.length || '-'}</small></div></div>
+    <div class="stat-card"><div class="stat-label">未提出者</div><div class="stat-value ${pending > 0 ? 'warn' : 'ok'}">${roster.length === 0 ? '-' : pending}</div></div>
+    <div class="stat-card"><div class="stat-label">酒気帯び検出</div><div class="stat-value ${detected > 0 ? 'warn' : 'ok'}">${detected}</div></div>
+    <div class="stat-card"><div class="stat-label">検知器未使用</div><div class="stat-value ${noDevice > 0 ? 'warn' : ''}">${noDevice}</div></div>
+  `;
+}
+
+function renderProgress() {
+  const block = document.getElementById('progressBlock');
+  if (roster.length === 0) {
+    block.innerHTML = `<div class="empty-state">従業員名簿が未登録です。<br>下の「従業員名簿」から追加してください。</div>`;
+    return;
+  }
+  const t = todayKey();
+  const today = records.filter(r => isoToDateKey(r.submittedAt) === t);
+  const submitted = new Set(today.map(r => r.name));
+  const pending = roster.filter(n => !submitted.has(n));
+  const done = roster.filter(n => submitted.has(n));
+
+  block.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px; font-weight:600;">
+        ✗ 未提出（${pending.length}名）
+      </div>
+      <div class="pending-list">
+        ${pending.length === 0
+          ? '<span style="color:var(--success); font-size:12px; font-weight:600;">✓ 全員提出済み</span>'
+          : pending.map(n => `<span class="pending-chip">${escapeHtml(n)}</span>`).join('')}
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">未出勤</div>
-      <div class="stat-num ${notYet > 0 ? 'warn' : 'ok'}">${notYet}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">退勤済み</div>
-      <div class="stat-num">${checkouts.length}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">アルコール検出</div>
-      <div class="stat-num ${alerts.length > 0 ? 'warn' : 'ok'}">${alerts.length}</div>
+    <div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px; font-weight:600;">
+        ✓ 提出済み（${done.length}名）
+      </div>
+      <div class="pending-list">
+        ${done.length === 0
+          ? '<span style="color:#9ca3af; font-size:12px;">まだ提出がありません</span>'
+          : done.map(n => `<span class="done-chip">${escapeHtml(n)}</span>`).join('')}
+      </div>
     </div>
   `;
-
-  // 社員別ステータス
-  const statusHTML = roster.length === 0
-    ? '<div class="empty-state">社員名簿が未登録です</div>'
-    : roster.map(name => {
-        const nr = dayRec.filter(r => r.name === name);
-        const alc = nr.find(r => r.type === 'alcohol');
-        const ci = nr.find(r => r.type === 'checkin');
-        const co = nr.find(r => r.type === 'checkout');
-        const isAlert = alc && alc.value > 0;
-
-        let statusClass, badge, timeText;
-        if (isAlert) {
-          statusClass = 'status-alert'; badge = 'badge-alert'; 
-          badge = '<span class="emp-status-badge badge-alert">⚠️ 検出</span>';
-          timeText = fmtTime(alc.time);
-        } else if (co) {
-          statusClass = 'status-left';
-          badge = '<span class="emp-status-badge badge-left">退勤済</span>';
-          timeText = '退勤 ' + fmtTime(co.time);
-        } else if (ci) {
-          statusClass = 'status-working';
-          badge = '<span class="emp-status-badge badge-working">🟢 出勤中</span>';
-          timeText = '出勤 ' + fmtTime(ci.time);
-        } else if (alc) {
-          statusClass = 'status-checked';
-          badge = '<span class="emp-status-badge badge-checked">✅ AC済</span>';
-          timeText = 'チェック ' + fmtTime(alc.time);
-        } else {
-          statusClass = 'status-none';
-          badge = '<span class="emp-status-badge badge-none">未対応</span>';
-          timeText = '-';
-        }
-        return `
-          <div class="emp-status-card ${statusClass}">
-            <div class="emp-status-name">${escape(name)}</div>
-            ${badge}
-            <div class="emp-status-time">${timeText}</div>
-          </div>`;
-      }).join('');
-  document.getElementById('empStatusGrid').innerHTML = statusHTML;
-
-  // 記録一覧
-  const sorted = [...dayRec].sort((a, b) => b.time.localeCompare(a.time));
-  const tbody = document.getElementById('recordsTbody');
-  if (sorted.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">記録がありません</td></tr>';
-  } else {
-    tbody.innerHTML = sorted.map(r => {
-      let typeBadge, detail;
-      if (r.type === 'alcohol') {
-        if (r.value > 0) {
-          typeBadge = '<span class="type-badge type-alert">⚠️ アルコール</span>';
-          detail = r.value.toFixed(2) + ' mg/L（検出）';
-        } else {
-          typeBadge = '<span class="type-badge type-alcohol">✅ チェック</span>';
-          detail = '0.00 mg/L（正常）';
-        }
-      } else if (r.type === 'checkin') {
-        typeBadge = '<span class="type-badge type-checkin">🟢 出勤</span>';
-        detail = r.gps
-          ? `<a class="map-link" href="${mapsUrl(r.gps.lat, r.gps.lng)}" target="_blank">📍 地図で確認</a>`
-          : '-';
-      } else {
-        typeBadge = '<span class="type-badge type-checkout">🔴 退勤</span>';
-        const ci = dayRec.find(dr => dr.name === r.name && dr.type === 'checkin');
-        let timeStr = '-';
-        if (ci) {
-          const mins = Math.round((new Date(r.time) - new Date(ci.time)) / 60000);
-          timeStr = `${Math.floor(mins/60)}時間${mins%60}分`;
-        }
-        const gpsLink = r.gps
-          ? ` <a class="map-link" href="${mapsUrl(r.gps.lat, r.gps.lng)}" target="_blank">📍</a>`
-          : '';
-        detail = timeStr + gpsLink;
-      }
-      return `<tr>
-        <td><strong>${escape(r.name)}</strong></td>
-        <td>${typeBadge}</td>
-        <td>${fmtTime(r.time)}</td>
-        <td style="color:#6b7280;">${detail}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  renderRoster();
 }
 
-// ===== CSV出力 =====
-function exportCSV() {
-  const date = document.getElementById('filterDate').value || todayKey();
-  const dayRec = records.filter(r => r.date === date);
-
-  // 社員ごとに集計
-  const rows = roster.map(name => {
-    const nr = dayRec.filter(r => r.name === name);
-    const alc = nr.find(r => r.type === 'alcohol');
-    const ci = nr.find(r => r.type === 'checkin');
-    const co = nr.find(r => r.type === 'checkout');
-    let workMins = '-';
-    if (ci && co) {
-      const mins = Math.round((new Date(co.time) - new Date(ci.time)) / 60000);
-      workMins = `${Math.floor(mins/60)}:${String(mins%60).padStart(2,'0')}`;
-    }
-    return [
-      date, name,
-      alc ? alc.value.toFixed(2) : '-',
-      alc ? (alc.value > 0 ? '検出' : '正常') : '未実施',
-      ci ? fmtTime(ci.time) : '-',
-      ci && ci.gps ? ci.gps.lat : '-',
-      ci && ci.gps ? ci.gps.lng : '-',
-      co ? fmtTime(co.time) : '-',
-      co && co.gps ? co.gps.lat : '-',
-      co && co.gps ? co.gps.lng : '-',
-      workMins
-    ];
-  });
-
-  const headers = ['日付','氏名','測定値(mg/L)','チェック結果','出勤時刻','出勤緯度','出勤経度','退勤時刻','退勤緯度','退勤経度','勤務時間'];
-  const csv = [headers, ...rows].map(r =>
-    r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')
-  ).join('\r\n');
-
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `勤怠記録_${date}.csv`;
-  a.click();
-  toast('CSVを出力しました');
+function getFilteredRecords() {
+  const date = document.getElementById('filterDate').value;
+  const name = document.getElementById('filterName').value.trim();
+  const alertF = document.getElementById('filterAlert').value;
+  return records
+    .filter(r => {
+      if (date && isoToDateKey(r.submittedAt) !== date) return false;
+      if (name && !r.name.includes(name)) return false;
+      if (alertF === 'alert' && r.hasAlcohol !== '有') return false;
+      if (alertF === '未使用' && r.useDevice !== '未使用') return false;
+      return true;
+    })
+    .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
 }
 
-// ===== 名簿管理 =====
-function renderRoster() {
-  const el = document.getElementById('rosterChips');
-  if (roster.length === 0) {
-    el.innerHTML = '<span style="color:#9ca3af;font-size:12px;">未登録です。社員名を追加してください。</span>';
+async function renderRecordsList() {
+  const list = getFilteredRecords();
+  const el = document.getElementById('recordsList');
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty-state">該当する記録がありません</div>`;
     return;
   }
-  el.innerHTML = roster.map((n, i) => `
-    <div class="roster-chip">
-      ${escape(n)}
-      <button onclick="removeRoster(${i})">×</button>
-    </div>`).join('');
+  el.innerHTML = list.map(r => renderRecordCard(r)).join('');
+  // 写真ロード
+  for (const r of list) {
+    if (r.photoId) {
+      const url = await getPhotoUrl(r.photoId);
+      const img = el.querySelector(`[data-record="${r.id}"] img`);
+      if (img) img.src = url;
+    }
+  }
 }
 
-function addRoster() {
-  const input = document.getElementById('newRoster');
-  const name = input.value.trim();
-  if (!name) return;
-  if (roster.includes(name)) { toast('既に登録されています'); return; }
-  roster.push(name);
-  saveAll();
-  input.value = '';
-  renderAdmin();
-  refreshSelect();
-  toast('追加しました');
+async function getPhotoUrl(id) {
+  if (blobUrls.has(id)) return blobUrls.get(id);
+  const photo = await getPhoto(id);
+  if (!photo) return '';
+  const url = URL.createObjectURL(photo.blob);
+  blobUrls.set(id, url);
+  return url;
 }
 
-function removeRoster(i) {
-  if (!confirm(`「${roster[i]}」を削除しますか？`)) return;
-  roster.splice(i, 1);
-  saveAll();
+function renderRecordCard(r) {
+  const isAlert = r.hasAlcohol === '有';
+  return `
+    <div class="record-card ${isAlert ? 'alert' : ''}" data-record="${r.id}">
+      <div class="record-top">
+        <div class="record-name">${escapeHtml(r.name)}</div>
+        <div class="record-time">${fmtDateTime(r.submittedAt)}</div>
+      </div>
+      <div class="record-grid">
+        <div class="record-field">
+          <div class="record-field-label">車両No.</div>
+          <div class="record-field-value">${escapeHtml(r.vehicleNo || '-')}</div>
+        </div>
+        <div class="record-field">
+          <div class="record-field-label">検知器</div>
+          <div class="record-field-value">${r.useDevice === '使用' ? '<span class="badge badge-info">使用</span>' : '<span class="badge badge-warn">未使用</span>'}</div>
+        </div>
+        <div class="record-field">
+          <div class="record-field-label">測定値</div>
+          <div class="record-field-value ${r.value > 0 ? 'value-alert' : ''}">${r.value.toFixed(2)} mg/L</div>
+        </div>
+        <div class="record-field">
+          <div class="record-field-label">酒気帯び</div>
+          <div class="record-field-value">${r.hasAlcohol === '有' ? '<span class="badge badge-ng">有り</span>' : '<span class="badge badge-ok">無し</span>'}</div>
+        </div>
+      </div>
+      ${r.photoId ? `
+        <div class="record-photo" onclick="openLightbox('${r.photoId}')">
+          <img alt="検知器写真">
+        </div>
+      ` : ''}
+      ${r.notes ? `<div class="record-notes">📝 ${escapeHtml(r.notes)}</div>` : ''}
+      <div class="record-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteRecord('${r.id}')">削除</button>
+      </div>
+    </div>
+  `;
+}
+
+async function openLightbox(photoId) {
+  const url = await getPhotoUrl(photoId);
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('show');
+}
+window.openLightbox = openLightbox;
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+
+async function deleteRecord(id) {
+  if (!confirm('この記録を削除しますか？\n（写真も一緒に削除されます）')) return;
+  const r = records.find(x => x.id === id);
+  if (r?.photoId) {
+    await delPhotoDB(r.photoId);
+    if (blobUrls.has(r.photoId)) { URL.revokeObjectURL(blobUrls.get(r.photoId)); blobUrls.delete(r.photoId); }
+  }
+  await delRecordDB(id);
+  records = records.filter(x => x.id !== id);
   renderAdmin();
-  refreshSelect();
+  showToast('削除しました');
+}
+window.deleteRecord = deleteRecord;
+
+// 名簿管理
+function renderRosterList() {
+  const el = document.getElementById('rosterList');
+  if (roster.length === 0) { el.innerHTML = '<span style="color:#9ca3af; font-size:12px;">未登録</span>'; return; }
+  el.innerHTML = roster.map(n => `
+    <span class="name-chip-master">
+      ${escapeHtml(n)}
+      <button onclick="removeRoster('${escapeHtml(n).replace(/'/g, "\\'")}')">×</button>
+    </span>
+  `).join('');
+}
+async function addRoster() {
+  const v = document.getElementById('newRoster').value.trim();
+  if (!v) return;
+  if (roster.includes(v)) { showToast('既に登録されています'); return; }
+  await putRosterDB(v);
+  roster.push(v);
+  document.getElementById('newRoster').value = '';
+  renderAdmin();
+  showToast('追加しました');
+}
+async function removeRoster(name) {
+  await delRosterDB(name);
+  roster = roster.filter(n => n !== name);
+  renderAdmin();
 }
 window.removeRoster = removeRoster;
 
-document.getElementById('newRoster').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addRoster();
-});
-
-function clearAll() {
-  if (!confirm('全データを削除します。この操作は取り消せません。')) return;
-  records = []; roster = [];
-  saveAll();
+// 車両マスター
+function renderVehicleList() {
+  const el = document.getElementById('vehicleListMaster');
+  if (vehicles.length === 0) { el.innerHTML = '<span style="color:#9ca3af; font-size:12px;">未登録</span>'; return; }
+  el.innerHTML = vehicles.map(v => `
+    <span class="name-chip-master">
+      ${escapeHtml(v)}
+      <button onclick="removeVehicle('${escapeHtml(v).replace(/'/g, "\\'")}')">×</button>
+    </span>
+  `).join('');
+}
+async function addVehicle() {
+  const v = document.getElementById('newVehicle').value.trim();
+  if (!v) return;
+  if (vehicles.includes(v)) { showToast('既に登録されています'); return; }
+  await putVehicleDB(v);
+  vehicles.push(v);
+  document.getElementById('newVehicle').value = '';
   renderAdmin();
-  refreshSelect();
-  toast('削除しました');
+  showToast('追加しました');
+}
+async function removeVehicle(no) {
+  await delVehicleDB(no);
+  vehicles = vehicles.filter(v => v !== no);
+  renderAdmin();
+}
+window.removeVehicle = removeVehicle;
+
+// CSV出力
+function exportCsv() {
+  const list = getFilteredRecords();
+  if (list.length === 0) { showToast('出力する記録がありません'); return; }
+  const headers = ['送信日時','氏名','車両No.','検知器の使用','測定値(mg/L)','酒気帯び','写真','備考'];
+  const rows = list.map(r => [
+    fmtDateTime(r.submittedAt),
+    r.name, r.vehicleNo || '',
+    r.useDevice, r.value.toFixed(2),
+    r.hasAlcohol === '有' ? '有り' : '無し',
+    r.photoId ? '有' : '無',
+    r.notes || ''
+  ]);
+  const csv = [headers, ...rows].map(row =>
+    row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')
+  ).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `アルコールチェック_${todayKey()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSVを出力しました');
 }
 
-document.getElementById('filterDate').addEventListener('change', renderAdmin);
+// JSON エクスポート（写真込み）
+async function exportJson() {
+  const photos = await pAll(tx('photos').objectStore('photos').getAll());
+  const photosData = [];
+  for (const p of photos) {
+    const reader = new FileReader();
+    const dataUrl = await new Promise((res, rej) => {
+      reader.onload = () => res(reader.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(p.blob);
+    });
+    photosData.push({ id: p.id, dataUrl, mimeType: p.mimeType });
+  }
+  const data = { version: 2, records, roster, vehicles, photos: photosData, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `アルコールチェック_バックアップ_${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSONを出力しました');
+}
 
-// ===== 初期化 =====
-refreshSelect();
-updateSteps(1);
+async function importJson(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.records)) throw new Error('形式が不正');
+      if (!confirm(`${data.records.length}件をインポートします。よろしいですか？`)) return;
+      for (const n of (data.roster || [])) {
+        if (!roster.includes(n)) { await putRosterDB(n); roster.push(n); }
+      }
+      for (const v of (data.vehicles || [])) {
+        if (!vehicles.includes(v)) { await putVehicleDB(v); vehicles.push(v); }
+      }
+      for (const p of (data.photos || [])) {
+        const r = await fetch(p.dataUrl);
+        const blob = await r.blob();
+        await putPhoto({ id: p.id, blob, mimeType: p.mimeType });
+      }
+      for (const r of data.records) await putRecord(r);
+      await loadAll();
+      renderAdmin();
+      showToast('インポートしました');
+    } catch (err) {
+      alert('インポートに失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+async function seedSample() {
+  if (!confirm('サンプルデータを投入します。よろしいですか？')) return;
+  const names = ['佐藤 一郎', '鈴木 花子', '高橋 健太', '田中 美咲', '伊藤 大輔'];
+  const vs = ['品川500あ12-34', '品川500あ56-78', '品川500あ90-12'];
+  for (const n of names) { if (!roster.includes(n)) { await putRosterDB(n); roster.push(n); } }
+  for (const v of vs) { if (!vehicles.includes(v)) { await putVehicleDB(v); vehicles.push(v); } }
+  const now = new Date();
+  const samples = [
+    { name: '佐藤 一郎', vehicleNo: '品川500あ12-34', useDevice: '使用', value: 0.00, hasAlcohol: '無', notes: '体調良好', offset: -180 },
+    { name: '鈴木 花子', vehicleNo: '品川500あ56-78', useDevice: '使用', value: 0.00, hasAlcohol: '無', notes: '', offset: -120 },
+    { name: '高橋 健太', vehicleNo: '品川500あ90-12', useDevice: '使用', value: 0.05, hasAlcohol: '有', notes: '前日の飲酒影響の可能性あり。再測定を依頼。', offset: -60 },
+    { name: '田中 美咲', vehicleNo: '品川500あ12-34', useDevice: '未使用', value: 0.00, hasAlcohol: '無', notes: '検知器メンテナンス中', offset: -30 }
+  ];
+  for (const s of samples) {
+    const t = new Date(now.getTime() + s.offset * 60000);
+    await putRecord({
+      id: uid(),
+      name: s.name, vehicleNo: s.vehicleNo, useDevice: s.useDevice,
+      value: s.value, hasAlcohol: s.hasAlcohol, photoId: null,
+      notes: s.notes, submittedAt: t.toISOString()
+    });
+  }
+  await loadAll();
+  renderAdmin();
+  showToast('サンプルを投入しました');
+}
+
+async function clearAllData() {
+  if (!confirm('全データを削除します。よろしいですか？')) return;
+  if (!confirm('本当に削除しますか？元に戻せません。')) return;
+  for (const r of records) {
+    if (r.photoId) await delPhotoDB(r.photoId);
+    await delRecordDB(r.id);
+  }
+  for (const n of roster) await delRosterDB(n);
+  for (const v of vehicles) await delVehicleDB(v);
+  blobUrls.forEach(url => URL.revokeObjectURL(url));
+  blobUrls.clear();
+  await loadAll();
+  renderAdmin();
+  showToast('全削除しました');
+}
+
+// 起動
+bootstrap();
 </script>
 </body>
 </html>
